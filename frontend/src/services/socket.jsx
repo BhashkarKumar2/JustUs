@@ -2,7 +2,8 @@ import { io } from 'socket.io-client';
 import CryptoService from './crypto';
 
 // Use environment variable for WebSocket URL, fallback to localhost. In production (served by backend), use relative (undefined).
-const WS_URL = process.env.NODE_ENV === 'production' ? undefined : (process.env.REACT_APP_WS_URL || 'http://localhost:5000');
+// Use environment variable for WebSocket URL, fallback to API URL or localhost
+const WS_URL = process.env.REACT_APP_WS_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 let socket = null;
 let userPublicKeys = {}; // Cache of userId -> publicKey
