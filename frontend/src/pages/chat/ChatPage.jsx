@@ -19,6 +19,7 @@ import useVoiceCall from '../../hooks/useVoiceCall';
 import useVideoCall from '../../hooks/useVideoCall';
 import useEncryption from '../../hooks/useEncryption';
 import { useReconnection } from '../../hooks/useReconnection';
+import NotificationManager from '../../components/common/NotificationManager';
 import useWallpaper from '../../hooks/useWallpaper';
 import useChatInitialization from '../../hooks/useChatInitialization';
 import useMessageSender from '../../hooks/useMessageSender';
@@ -360,6 +361,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
       }}>
 
         {/* Wallpaper Layer */}
+        <NotificationManager />
         {wallpaperActive && resolvedWallpaperUrl && (
           <div
             aria-hidden

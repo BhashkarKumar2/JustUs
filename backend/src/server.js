@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import webpush from 'web-push';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
@@ -17,6 +18,7 @@ import configRoutes from './routes/configRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import botRoutes from './routes/botRoutes.js';
 import ttsRoutes from './routes/ttsRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import path from 'path';
@@ -135,6 +137,7 @@ app.use('/api/config', configRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/tts', ttsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 
@@ -177,6 +180,18 @@ const PORT = process.env.PORT || 5000;
 console.log(`Starting server in ${NODE_ENV} mode...`);
 console.log("CONNECTION STRING FOR MONGO :  ", MONGODB_URI);
 console.log("=== BACKEND SERVER RESTARTING (Auth CORS Fix): " + new Date().toISOString() + " ===");
+
+// Initialize Web Push
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_MAILTO || 'mailto:example@yourdomain.org',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+  console.log('✓ Web Push configured');
+} else {
+  console.warn('! Web Push keys missing in .env');
+}
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,

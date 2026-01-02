@@ -14,6 +14,9 @@ export default defineConfig({
             protocolImports: true,
         }),
         VitePWA({
+            strategies: 'injectManifest',
+            srcDir: 'src',
+            filename: 'sw.js',
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png', 'robots.txt'],
             manifest: {

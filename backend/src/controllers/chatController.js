@@ -1,6 +1,8 @@
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
 import messageService from '../services/messageService.js';
+import Subscription from '../models/Subscription.js';
+import webpush from 'web-push';
 
 const DEFAULT_WALLPAPER = {
   sourceType: 'none',
@@ -119,6 +121,42 @@ export const sendMessage = async (req, res) => {
 
     const message = new Message(messageData);
     const saved = await message.save();
+
+    // Sends Push Notification asynchronously (don't block response)
+    (async () => {
+      try {
+        if (!messageData.receiverId) return;
+
+        const subscriptions = await Subscription.find({ userId: messageData.receiverId });
+        if (!subscriptions.length) return;
+
+        const notificationPayload = JSON.stringify({
+          title: 'New Message',
+          body: messageData.type === 'text' ? messageData.content : `Sent a ${messageData.type}`,
+          icon: '/icon-192x192.png', // Ensure this exists in public folder
+          data: {
+            url: `/chat/${messageData.conversationId}`,
+            conversationId: messageData.conversationId
+          }
+        });
+
+        const promises = subscriptions.map(sub =>
+          webpush.sendNotification(sub.subscription, notificationPayload)
+            .catch(err => {
+              if (err.statusCode === 410 || err.statusCode === 404) {
+                // Subscription expired/gone
+                return Subscription.findByIdAndDelete(sub._id);
+              }
+              console.error('Error sending notification', err);
+            })
+        );
+
+        await Promise.all(promises);
+      } catch (pushErr) {
+        console.error('Push notification handler error:', pushErr);
+      }
+    })();
+
     res.json(saved);
   } catch (error) {
     console.error('Send message error:', error);
