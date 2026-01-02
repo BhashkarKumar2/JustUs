@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { loadAuthenticatedMedia } from '../../../utils/mediaLoader';
+import { loadAuthenticatedMedia, getAuthenticatedMediaUrl } from '../../../utils/mediaLoader';
 import BotMessage from './BotMessage';
 
 export default function MessageItem({ me, m, onEdit, onDelete, onContextMenu }) {
@@ -269,13 +269,8 @@ export default function MessageItem({ me, m, onEdit, onDelete, onContextMenu }) 
                             <button
                               className="px-4 py-2 bg-indigo-500 text-white text-xs rounded-xl hover:bg-indigo-600 transition-all duration-300 shadow-lg modern-button"
                               onClick={() => {
-                                const token = localStorage.getItem('token');
-                                if (token) {
-                                  const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-                                  const url = new URL(m.content, baseUrl);
-                                  url.searchParams.set('token', token);
-                                  window.open(url.toString(), '_blank');
-                                }
+                                const url = getAuthenticatedMediaUrl(m.content);
+                                if (url) window.open(url, '_blank');
                               }}
                             >
                               Open Image
@@ -330,13 +325,8 @@ export default function MessageItem({ me, m, onEdit, onDelete, onContextMenu }) 
                           <button
                             className="px-4 py-2 bg-indigo-500 text-white text-xs rounded-xl hover:bg-indigo-600 transition-colors shadow-lg"
                             onClick={() => {
-                              const token = localStorage.getItem('token');
-                              if (token) {
-                                const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-                                const url = new URL(m.content, baseUrl);
-                                url.searchParams.set('token', token);
-                                window.open(url.toString(), '_blank');
-                              }
+                              const url = getAuthenticatedMediaUrl(m.content);
+                              if (url) window.open(url, '_blank');
                             }}
                           >
                             Open Audio

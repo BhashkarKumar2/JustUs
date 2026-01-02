@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { loadAuthenticatedMedia } from '../../../utils/mediaLoader';
+import { getAuthenticatedApi } from '../../../services/api';
 
 export default function AudioMessage({ message, mine, colors, theme }) {
   // ... existing state hooks
@@ -42,7 +43,13 @@ export default function AudioMessage({ message, mine, colors, theme }) {
       // FIX: Use direct URL with token instead of complex fetch/blob flow
       // This solves the 401 Unauthorized issue by leveraging the backend's tokenFromQuery middleware
       const token = localStorage.getItem('token');
-      const baseUrl = message.content;
+      let baseUrl = message.content;
+
+      // FIX: Handle relative URLs for production (Vercel -> Render)
+      if (baseUrl && baseUrl.startsWith('/')) {
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        baseUrl = `${API_URL}${baseUrl}`;
+      }
 
       // Ensure we have a valid URL
       const authUrl = baseUrl.includes('?')
@@ -150,24 +157,17 @@ export default function AudioMessage({ message, mine, colors, theme }) {
       console.log('[AudioMessage] Fetching TTS audio for language:', targetLang);
       setSpeakingTranslated(true);
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/tts/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          text: translated,
-          language: targetLang
-        })
+      const api = getAuthenticatedApi();
+      const response = await api.post('/api/tts/generate', {
+        text: translated,
+        language: targetLang
+      }, {
+        responseType: 'blob'
       });
 
-      if (!response.ok) {
-        throw new Error(`TTS request failed: ${response.statusText}`);
-      }
+      const audioBlob = response.data;
 
-      const audioBlob = await response.blob();
+
       const ttsAudioUrl = URL.createObjectURL(audioBlob);
 
       console.log('[AudioMessage] Playing TTS audio');
