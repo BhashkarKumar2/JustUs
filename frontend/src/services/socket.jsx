@@ -3,7 +3,14 @@ import CryptoService from './crypto';
 
 // Use environment variable for WebSocket URL, fallback to localhost. In production (served by backend), use relative (undefined).
 // Use environment variable for WebSocket URL, fallback to API URL or localhost
-const WS_URL = process.env.REACT_APP_WS_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
+let WS_URL = process.env.REACT_APP_WS_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// Auto-upgrade to WSS if running on HTTPS (Mixed Content Fix)
+if (typeof window !== 'undefined' && window.location.protocol === 'https:' && WS_URL.startsWith('ws://')) {
+  WS_URL = WS_URL.replace('ws://', 'wss://');
+} else if (typeof window !== 'undefined' && window.location.protocol === 'https:' && WS_URL.startsWith('http://')) {
+  WS_URL = WS_URL.replace('http://', 'https://');
+}
 
 let socket = null;
 let userPublicKeys = {}; // Cache of userId -> publicKey
