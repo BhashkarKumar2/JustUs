@@ -71,7 +71,7 @@ async function canvasPreview(image, crop, scale = 1, rotate = 0) {
     return canvas.toDataURL('image/jpeg', 0.9);
 }
 
-export default function ImageCropper({ image, onCancel, onCropComplete, aspect = 3 / 4, open = false }) {
+export default function ImageCropper({ image, onCancel, onCropComplete, aspect = undefined, open = false }) {
     const [crop, setCrop] = useState();
     const [completedCrop, setCompletedCrop] = useState();
     const imgRef = useRef(null);
