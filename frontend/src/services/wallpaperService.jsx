@@ -5,7 +5,7 @@ export const DEFAULT_WALLPAPER = {
   sourceType: 'none',
   presetKey: 'aurora',
   imageUrl: '',
-  blur: 6,
+  blur: 0,
   opacity: 0.9
 };
 

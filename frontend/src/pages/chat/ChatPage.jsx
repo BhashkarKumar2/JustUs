@@ -367,11 +367,11 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
               position: 'absolute',
               inset: 0,
               backgroundImage: wallpaperIsGradient ? resolvedWallpaperUrl : `url(${resolvedWallpaperUrl})`,
-              backgroundSize: 'cover',
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
               backgroundPosition: 'center',
-              filter: `blur(${wallpaperPreview.blur || 0}px)`,
               opacity: wallpaperPreview.opacity ?? 0.9,
-              transition: 'opacity 0.2s ease, filter 0.2s ease',
+              transition: 'opacity 0.2s ease',
               zIndex: 0,
               pointerEvents: 'none'
             }}
@@ -520,12 +520,14 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
 
       {showSearchModal && (
         <SmartSearch
+          conversationId={conversationId}
           onClose={() => setShowSearchModal(false)}
-          onNavigateMessage={(messageId) => {
+          onResultClick={(message) => {
             // Implementation would need to find message in history or load it
-            console.log('Navigate to:', messageId);
+            console.log('Navigate to:', message.id);
+            // Optional: Implement scroll to message logic here
           }}
-          theme={theme}
+          darkMode={darkMode}
         />
       )}
 
@@ -540,23 +542,29 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
 
       {wallpaperPanelOpen && (
         <WallpaperPanel
-          isOpen={wallpaperPanelOpen}
+          open={wallpaperPanelOpen}
           onClose={closeWallpaperPanel}
-          currentSettings={wallpaperPreview}
-          onSettingsChange={setWallpaperPreview}
-          onSave={async () => {
+          value={wallpaperPreview}
+          onChange={setWallpaperPreview}
+          onSave={async (draft) => {
             try {
+              // Optimistic visual update
+              setWallpaperPreview(draft);
               setSavingWallpaper(true);
-              await saveWallpaper(conversationId, wallpaperPreview);
-              setWallpaperSettings(wallpaperPreview);
-              setWallpaperPanelOpen(false);
+
+              await saveWallpaper(conversationId, draft);
+
+              setWallpaperSettings(draft);
+              closeWallpaperPanel();
             } catch (err) {
               console.error('Failed to save wallpaper', err);
+              // Revert preview on error
+              setWallpaperPreview(wallpaperSettings);
             } finally {
               setSavingWallpaper(false);
             }
           }}
-          loading={savingWallpaper}
+          saving={savingWallpaper}
           presets={wallpaperPresets}
         />
       )}
