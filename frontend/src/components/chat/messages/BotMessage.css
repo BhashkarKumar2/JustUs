@@ -1,0 +1,135 @@
+.bot-message-container {
+  display: flex;
+  justify-content: flex-start;
+  margin: 16px 12px;
+  animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.bot-message-wrapper {
+  display: flex;
+  gap: 12px;
+  max-width: 75%;
+}
+
+.bot-avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.bot-message-content {
+  flex: 1;
+  background: linear-gradient(135deg, #f5f7ff 0%, #f0f4ff 100%);
+  border: 1px solid #e0e7ff;
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.bot-message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.bot-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #667eea;
+}
+
+.bot-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bot-message-text {
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.bot-message-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: #6b7280;
+  padding-top: 4px;
+  border-top: 1px solid #e0e7ff;
+}
+
+.bot-timestamp {
+  font-weight: 500;
+}
+
+.bot-powered-by {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .bot-message-content {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    border-color: #4a5568;
+  }
+
+  .bot-message-text {
+    color: #e2e8f0;
+  }
+
+  .bot-message-footer {
+    color: #a0aec0;
+    border-top-color: #4a5568;
+  }
+
+  .bot-name {
+    color: #818cf8;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .bot-message-wrapper {
+    max-width: 85%;
+  }
+
+  .bot-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .bot-message-content {
+    padding: 10px 14px;
+  }
+}

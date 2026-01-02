@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://justus2-eztv.vercel.app/sitemap.xml

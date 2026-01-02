@@ -1,0 +1,19 @@
+{
+    "name": "justus-v2-root",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Root package for JustUs V2 to orchestrate backend and frontend",
+    "scripts": {
+        "install-all": "npm install && npm install --prefix backend && npm install --prefix frontend",
+        "start": "concurrently \"npm run server\" \"npm run client\"",
+        "server": "npm run dev --prefix backend",
+        "client": "npm run start --prefix frontend"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    },
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+    }
+}
