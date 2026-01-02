@@ -6,6 +6,7 @@
 
 - **Real-time Messaging**: Instant text, voice, and media sharing.
 - **AI Integration**: Powered by Google Generative AI and OpenAI for smart responses and assistance.
+- **Real-time Translation**: Instant message translation to break language barriers.
 - **Secure Authentication**: Robust user authentication using JWT and bcrypt.
 - **Media Support**: Easy file uploads and sharing.
 - **Responsive Design**: Mobile-first UI built with TailwindCSS.
