@@ -1,6 +1,7 @@
 /**
  * Merges new messages into an existing message array, strictly enforcing uniqueness by ID.
  * Handles duplicate checks against both `id` and `_id` properties.
+ * Also replaces temporary (optimistic) messages with their real server counterparts.
  * 
  * @param {Array} currentMessages - The current state of messages.
  * @param {Array} newMessages - The new messages to add or update.
@@ -10,7 +11,6 @@ export const mergeMessages = (currentMessages, newMessages) => {
     if (!newMessages || newMessages.length === 0) return currentMessages;
 
     // Create a Map for O(1) lookups and easy updates.
-    // We prioritize real IDs (non-temp) and newer timestamps.
     const messageMap = new Map();
 
     // 1. Load current messages into Map
@@ -30,7 +30,6 @@ export const mergeMessages = (currentMessages, newMessages) => {
         const existing = messageMap.get(strKey);
 
         if (existing) {
-            // Logic for updating existing message
             // If existing is temporary and new is real => Replace
             if (existing.temporary && !msg.temporary) {
                 messageMap.set(strKey, msg);
@@ -39,12 +38,34 @@ export const mergeMessages = (currentMessages, newMessages) => {
             else if (!existing.temporary && !msg.temporary) {
                 messageMap.set(strKey, { ...existing, ...msg });
             }
-            // If new is temporary (optimistic) and we have real => Ignore new logic?
-            // Actually, usually optimistic updates handle this by swapping IDs or using temp IDs.
-            // If specific keys match, we assume update is desired.
         } else {
-            // New message
-            messageMap.set(strKey, msg);
+            // Check if this new message should replace a temporary one
+            // Match by: sender, receiver, content, type, and close timestamp (within 10 seconds)
+            if (!msg.temporary) {
+                let replacedTemp = false;
+                for (const [existingKey, existingMsg] of messageMap.entries()) {
+                    if (
+                        existingMsg.temporary &&
+                        existingMsg.senderId === msg.senderId &&
+                        existingMsg.receiverId === msg.receiverId &&
+                        existingMsg.type === msg.type &&
+                        existingMsg.content === msg.content &&
+                        Math.abs(new Date(existingMsg.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 10000
+                    ) {
+                        // Remove the temp message and add the real one
+                        messageMap.delete(existingKey);
+                        messageMap.set(strKey, msg);
+                        replacedTemp = true;
+                        break;
+                    }
+                }
+                if (!replacedTemp) {
+                    messageMap.set(strKey, msg);
+                }
+            } else {
+                // New temporary message
+                messageMap.set(strKey, msg);
+            }
         }
     });
 
@@ -60,3 +81,4 @@ export const mergeMessages = (currentMessages, newMessages) => {
 
     return result;
 };
+
