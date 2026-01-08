@@ -3,6 +3,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import ProfileModal from './components/modals/ProfileModal';
 import api, { setAuthToken } from './services/api';
+import { Toaster, toast } from 'react-hot-toast';
 
 // Lazy load pages for better performance
 const ChatPage = lazy(() => import('./pages/chat/ChatPage'));
@@ -46,14 +47,14 @@ export default function App() {
         try {
           const res = await api.post('/api/auth/connect', { inviteCode });
           localStorage.removeItem('pendingInviteCode');
-          alert(`Connected with ${res.data.user.displayName}!`);
+          toast.success(`Connected with ${res.data.user.displayName}!`);
           // Force reload to update contacts list
           window.location.reload();
         } catch (error) {
           console.error('Failed to connect:', error);
           const msg = error.response?.data?.message || 'Failed to connect using invite link.';
           if (msg !== 'Already connected') {
-            alert(msg);
+            toast.error(msg);
           }
           localStorage.removeItem('pendingInviteCode');
         } finally {
@@ -223,6 +224,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      <Toaster position="top-center" reverseOrder={false} />
       <div className={`min-h-screen relative overflow-hidden ${darkMode
         ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black'
         : 'bg-gradient-to-br from-indigo-300 via-blue-200 to-indigo-300'
@@ -236,12 +238,12 @@ export default function App() {
           ? 'bg-black/20 border-white/10'
           : 'bg-white/10 border-white/20'
           }`}>
-          <div className="max-w-6xl mx-auto py-4 px-6 flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <img src="/logo192.png" alt="JustUs Logo" className="w-10 h-10 rounded-lg object-contain" />
-              <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>JustUs</h1>
+          <div className="max-w-6xl mx-auto py-3 px-4 md:py-4 md:px-6 flex justify-between items-center">
+            <div className="flex items-center space-x-2 md:space-x-3">
+              <img src="/logo192.png" alt="JustUs Logo" className="w-8 h-8 md:w-10 md:h-10 rounded-lg object-contain" />
+              <h1 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>JustUs</h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 md:space-x-4">
               {/* Quick Contact Switcher - Only visible when logged in */}
               {user && (
                 <button
@@ -257,22 +259,6 @@ export default function App() {
                   </svg>
                 </button>
               )}
-              {/* Add Contact button - opens ChatPage's Add Contact modal via event
-            {user && (
-              <button
-                onClick={() => window.dispatchEvent(new Event('open-add-contact'))}
-                className={`p-2 rounded-lg transition-all duration-200 ${
-                  darkMode
-                    ? 'bg-gray-700 hover:bg-gray-600 text-green-400'
-                    : 'bg-gray-100 hover:bg-gray-200 text-green-600'
-                }`}
-                title="Add contact"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-              </button>
-            )} */}
 
               {/* Theme Toggle Button - Always Visible */}
               <button
@@ -313,7 +299,7 @@ export default function App() {
               )}
               {user && (
                 <>
-                  <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  <div className={`hidden md:block text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     Welcome, <span className="font-semibold text-indigo-600">{user.displayName || user.username}</span>
                   </div>
                 </>

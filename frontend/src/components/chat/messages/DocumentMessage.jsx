@@ -1,5 +1,6 @@
 import React from 'react';
-import { loadAuthenticatedDocument } from '../../../utils/mediaLoader';
+import { loadAuthenticatedDocument, loadAuthenticatedMedia } from '../../../utils/mediaLoader';
+import { toast } from 'react-hot-toast';
 
 export default function DocumentMessage({ message, mine, onOpenLightbox }) {
   const filename = message.metadata?.filename || 'document.pdf';
@@ -10,7 +11,7 @@ export default function DocumentMessage({ message, mine, onOpenLightbox }) {
       await loadAuthenticatedDocument(fileUrl, 'application/pdf', false, filename);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Failed to download file');
+      toast.error('Failed to download file');
     }
   };
 
@@ -22,8 +23,6 @@ export default function DocumentMessage({ message, mine, onOpenLightbox }) {
         const urlParts = fileUrl.split('/');
         const mediaId = urlParts[urlParts.length - 1].split('?')[0];
 
-        // Import loadAuthenticatedMedia
-        const { loadAuthenticatedMedia } = await import('../../../utils/mediaLoader');
         const authenticatedBlobUrl = await loadAuthenticatedMedia(fileUrl, mediaId);
 
         // Open the authenticated blob URL in lightbox
@@ -33,7 +32,7 @@ export default function DocumentMessage({ message, mine, onOpenLightbox }) {
       }
     } catch (error) {
       console.error('View failed:', error);
-      alert('Failed to open file');
+      toast.error('Failed to open file');
     }
   };
 

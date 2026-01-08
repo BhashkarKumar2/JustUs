@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { loadAuthenticatedMedia } from '../../../utils/mediaLoader';
 import { getAuthenticatedApi } from '../../../services/api';
+import { toast } from 'react-hot-toast';
 
 export default function AudioMessage({ message, mine, colors, theme }) {
   // ... existing state hooks
@@ -186,7 +187,7 @@ export default function AudioMessage({ message, mine, colors, theme }) {
         console.error('[AudioMessage] TTS playback error:', e);
         setSpeakingTranslated(false);
         URL.revokeObjectURL(ttsAudioUrl);
-        alert('Failed to play translation audio');
+        toast.error('Failed to play translation audio');
       };
 
       await ttsAudio.play();
@@ -194,7 +195,7 @@ export default function AudioMessage({ message, mine, colors, theme }) {
     } catch (error) {
       console.error('[AudioMessage] TTS error:', error);
       setSpeakingTranslated(false);
-      alert('Failed to generate speech for translation. Please try again.');
+      toast.error('Failed to generate speech for translation. Please try again.');
     }
   };
 

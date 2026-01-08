@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { getWebRTCConfig } from '../services/config';
+import { toast } from 'react-hot-toast';
 
 /**
  * Shared WebRTC hook for both Video and Voice calls
@@ -189,7 +190,7 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
 
     // Signaling Actions
     const startCall = async () => {
-        if (!socket || !otherUserId) return alert('Not connected');
+        if (!socket || !otherUserId) return toast.error('Not connected');
 
         try {
             setCallState('calling');
@@ -224,7 +225,7 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
 
         } catch (err) {
             console.error(`${logPrefix} startCall error`, err);
-            alert(`Failed to start call: ${err.message}`);
+            toast.error(`Failed to start call: ${err.message}`);
             setCallState('idle');
         }
     };
@@ -278,7 +279,7 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
 
         } catch (err) {
             console.error(`${logPrefix} answerCall error`, err);
-            alert(`Failed to answer: ${err.message}`);
+            toast.error(`Failed to answer: ${err.message}`);
             rejectCall();
         }
     };
@@ -317,7 +318,7 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
             reject: () => {
                 console.log(`${logPrefix} received reject`);
                 setCallState('idle'); // Just reset state, don't call endCall() loop logic
-                alert('Call rejected');
+                toast.error('Call rejected');
                 cleanupMedia(); // Cleanup media but don't re-emit end
                 closePeerConnection();
                 stopCallTimer();

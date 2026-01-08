@@ -7,6 +7,7 @@ import VideoMessage from '../messages/VideoMessage';
 import CallMessage from '../messages/CallMessage';
 import { fmtTime } from '../../../utils/format';
 import { loadAuthenticatedMedia } from '../../../utils/mediaLoader';
+import { toast } from 'react-hot-toast';
 
 // MenuItem component for context menu
 const MenuItem = ({ icon, label, onClick, theme, danger, colors }) => {
@@ -571,7 +572,7 @@ export default function ChatMessages({ messages, user, otherUser, onEdit, onDele
                     closeContextMenu();
                   } catch (error) {
                     console.error('Download failed:', error);
-                    alert('Failed to download file. Please try again.');
+                    toast.error('Failed to download file. Please try again.');
                     closeContextMenu();
                   }
                 }}

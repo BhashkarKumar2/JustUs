@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
 import { getAvatarUrl } from '../../services/avatarService';
+import { toast } from 'react-hot-toast';
 
 export default function UserSelectModal({ show, onClose, availableUsers, currentUserId, onSelect, darkMode, currentChatUserId }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,7 +70,7 @@ export default function UserSelectModal({ show, onClose, availableUsers, current
     e.preventDefault();
     if (!inviteCode.trim()) return;
     if (localStorage.getItem('invite_connecting') === '1') {
-      alert('An invite is already being processed. Please wait...');
+      toast.error('An invite is already being processed. Please wait...');
       return;
     }
 
@@ -77,10 +78,10 @@ export default function UserSelectModal({ show, onClose, availableUsers, current
     localStorage.setItem('invite_connecting', '1');
     try {
       const res = await api.post('/api/auth/connect', { inviteCode: inviteCode.trim() });
-      alert(`Connected with ${res.data.user.displayName}!`);
+      toast.success(`Connected with ${res.data.user.displayName}!`);
       window.location.reload();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to connect');
+      toast.error(error.response?.data?.message || 'Failed to connect');
     } finally {
       setLoading(false);
       localStorage.removeItem('invite_connecting');

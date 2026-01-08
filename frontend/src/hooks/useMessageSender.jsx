@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { sendSocketMessage } from '../services/socket';
 import { mergeMessages } from '../utils/chatUtils';
+import { toast } from 'react-hot-toast';
 
 export default function useMessageSender({
     user,
@@ -26,7 +27,7 @@ export default function useMessageSender({
         const targetUserId = otherUserId || localStorage.getItem('otherUserId');
 
         if (!targetUserId) {
-            alert('No chat partner available.');
+            toast.error('No chat partner available.');
             sendingRef.current = false;
             setSending(false);
             return;
@@ -44,7 +45,7 @@ export default function useMessageSender({
             });
 
             if (!success) {
-                alert('Failed to edit message. Check connection.');
+                toast.error('Failed to edit message. Check connection.');
             }
             setEditingMessage(null);
         }

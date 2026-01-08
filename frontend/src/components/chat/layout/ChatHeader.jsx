@@ -84,7 +84,6 @@ export default function ChatHeader({
       display: 'flex',
       alignItems: 'center',
       gap: 'clamp(6px, 2vw, 12px)',
-      gap: 'clamp(6px, 2vw, 12px)',
       /* backdropFilter: 'blur(20px)', -- REMOVED for performance */
       /* WebkitBackdropFilter: 'blur(20px)', */
       borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)'}`,

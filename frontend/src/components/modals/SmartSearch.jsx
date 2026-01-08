@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import aiService from '../../services/aiService';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { toast } from 'react-hot-toast';
 
 export default function SmartSearch({ conversationId, onResultClick, darkMode, onClose }) {
   const [query, setQuery] = useState('');
@@ -39,7 +40,7 @@ export default function SmartSearch({ conversationId, onResultClick, darkMode, o
       const searchResults = await aiService.smartSearch(query, conversationId);
       setResults(searchResults);
     } catch (error) {
-      alert('Search failed: ' + error.message);
+      toast.error('Search failed: ' + error.message);
     } finally {
       setSearching(false);
     }

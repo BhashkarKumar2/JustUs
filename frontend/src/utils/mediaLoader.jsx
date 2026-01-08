@@ -1,5 +1,5 @@
-// Utility for loading media files with authentication
 import api, { getAuthenticatedApi } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 const mediaCache = new Map();
 const blobCache = new Map(); // Keep blobs in memory to prevent garbage collection
@@ -173,7 +173,7 @@ export const loadAuthenticatedDocument = async (documentUrl, mimeType = 'applica
       // Open in new tab
       const newWindow = window.open(blobUrl, '_blank');
       if (!newWindow) {
-        alert('Please allow popups to view the file');
+        toast.error('Please allow popups to view the file');
       }
 
       // Clean up after a delay

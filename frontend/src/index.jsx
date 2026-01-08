@@ -20,4 +20,20 @@ root.render(
   </ErrorBoundary>
 );
 
+// Register Service Worker for PWA and Push Notifications
+import { registerSW } from 'virtual:pwa-register';
+
+if ('serviceWorker' in navigator) {
+  const updateSW = registerSW({
+    onNeedRefresh() {
+      if (confirm('New content available. Reload?')) {
+        updateSW(true);
+      }
+    },
+    onOfflineReady() {
+      console.log('App is ready for offline use.');
+    },
+  });
+}
+
 

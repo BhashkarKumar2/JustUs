@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getAuthenticatedApi } from '../services/api';
 import { sendSocketMessage } from '../services/socket';
+import { toast } from 'react-hot-toast';
 
 export default function useImageUpload({ userId, otherUserId, conversationId, setMessages }) {
   const [uploading, setUploading] = useState(false);
@@ -27,7 +28,7 @@ export default function useImageUpload({ userId, otherUserId, conversationId, se
     const isVideo = file.type.startsWith('video/');
 
     if (!isPdf && !isImage && !isVideo) {
-      alert('Please select an image, video, or PDF file');
+      toast.error('Please select an image, video, or PDF file');
       return;
     }
 
@@ -111,7 +112,7 @@ export default function useImageUpload({ userId, otherUserId, conversationId, se
           setMessages(prev => prev.map(msg => msg.id === tempId ? { ...sentMsg.data, temporary: false } : msg));
         } catch (apiError) {
           setMessages(prev => prev.filter(msg => msg.id !== tempId));
-          alert('Failed to send file. Please try again.');
+          toast.error('Failed to send file. Please try again.');
         }
       } else {
         // Socket sent successfully - remove temp message since server will echo back the real one
@@ -120,7 +121,7 @@ export default function useImageUpload({ userId, otherUserId, conversationId, se
       }
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Failed to upload file: ' + (error.response?.data?.message || error.message));
+      toast.error('Failed to upload file: ' + (error.response?.data?.message || error.message));
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
     } finally {
       setUploading(false);

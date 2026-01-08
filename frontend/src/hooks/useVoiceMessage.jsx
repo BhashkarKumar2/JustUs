@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getAuthenticatedApi } from '../services/api';
 import { sendSocketMessage } from '../services/socket';
 import aiService from '../services/aiService';
+import { toast } from 'react-hot-toast';
 
 export default function useVoiceMessage({ userId, otherUserId, conversationId, setMessages }) {
   const [recording, setRecording] = useState(false);
@@ -55,7 +56,7 @@ export default function useVoiceMessage({ userId, otherUserId, conversationId, s
 
   const startRecording = async () => {
     if (!navigator.mediaDevices) {
-      alert('Voice recording is not supported in your browser.');
+      toast.error('Voice recording is not supported in your browser.');
       return;
     }
     try {
@@ -218,7 +219,7 @@ export default function useVoiceMessage({ userId, otherUserId, conversationId, s
             } catch (apiError) {
               console.error('API send failed', apiError);
               setMessages(prev => prev.filter(msg => msg.id !== tempId));
-              alert('Failed to send audio message. Please try again.');
+              toast.error('Failed to send audio message. Please try again.');
             }
           } else {
             // Socket sent - remove temp. Server echo will add real message.
@@ -232,7 +233,7 @@ export default function useVoiceMessage({ userId, otherUserId, conversationId, s
 
         } catch (error) {
           console.error('Voice upload failed:', error);
-          alert('Failed to send voice message. Please try again.');
+          toast.error('Failed to send voice message. Please try again.');
           setMessages(prev => prev.filter(msg => msg.id !== tempId));
         }
 
@@ -246,7 +247,7 @@ export default function useVoiceMessage({ userId, otherUserId, conversationId, s
       mr.start();
     } catch (error) {
       console.error('Failed to start recording:', error);
-      alert('Failed to access microphone. Please check your permissions.');
+      toast.error('Failed to access microphone. Please check your permissions.');
       setRecording(false);
     }
   };

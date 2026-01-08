@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { toast } from 'react-hot-toast';
 import { getConnectionStatus, getSocket } from '../../services/socket';
 import ChatHeader from '../../components/chat/layout/ChatHeader';
 import ChatMessages from '../../components/chat/layout/ChatMessages';
@@ -511,7 +512,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
               setForwardingMessage(null);
             } catch (err) {
               console.error('Forward failed:', err);
-              alert(err.response?.data?.message || 'Failed to forward message');
+              toast.error(err.response?.data?.message || 'Failed to forward message');
             }
           }}
           currentUserId={user.id}
