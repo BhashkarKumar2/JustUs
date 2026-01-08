@@ -27,14 +27,7 @@ export default function useChatSocket({
   const reconnectRef = useRef(null);
   const isAuthErrorRef = useRef(false);
 
-  // Update refs when props change
-  useEffect(() => {
-    availableUsersRef.current = availableUsers;
-    setMessagesRef.current = setMessages;
-    setTypingUserRef.current = setTypingUser;
-    encryptionRef.current = encryption;
-    reconnectRef.current = reconnectWebSocket;
-  }, [availableUsers, setMessages, setTypingUser, encryption, reconnectWebSocket]);
+
 
   const handleWebSocketMessage = useCallback((message) => {
     if (message && message.type && message.type.startsWith('system:')) return;
@@ -182,6 +175,15 @@ export default function useChatSocket({
     setIsReconnecting(false);
     setConnectionStatus('disconnected');
   }, [token, isReconnecting, setIsReconnecting, setReconnectAttempts, setConnectionStatus, connectedRef, handleWebSocketMessage, onUserStatusChange]);
+
+  // Update refs when props change
+  useEffect(() => {
+    availableUsersRef.current = availableUsers;
+    setMessagesRef.current = setMessages;
+    setTypingUserRef.current = setTypingUser;
+    encryptionRef.current = encryption;
+    reconnectRef.current = reconnectWebSocket;
+  }, [availableUsers, setMessages, setTypingUser, encryption, reconnectWebSocket]);
 
   useEffect(() => {
     if (!token) return;
