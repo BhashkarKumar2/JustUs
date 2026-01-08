@@ -24,6 +24,8 @@ export default function useChatSocket({
   const setMessagesRef = useRef(setMessages);
   const setTypingUserRef = useRef(setTypingUser);
   const encryptionRef = useRef(encryption);
+  const reconnectRef = useRef(null);
+  const isAuthErrorRef = useRef(false);
 
   // Update refs when props change
   useEffect(() => {
@@ -31,7 +33,8 @@ export default function useChatSocket({
     setMessagesRef.current = setMessages;
     setTypingUserRef.current = setTypingUser;
     encryptionRef.current = encryption;
-  }, [availableUsers, setMessages, setTypingUser, encryption]);
+    reconnectRef.current = reconnectWebSocket;
+  }, [availableUsers, setMessages, setTypingUser, encryption, reconnectWebSocket]);
 
   const handleWebSocketMessage = useCallback((message) => {
     if (message && message.type && message.type.startsWith('system:')) return;
@@ -149,6 +152,7 @@ export default function useChatSocket({
               onAuthError: (error) => {
                 console.error('Socket Authentication Failed:', error);
                 setConnectionStatus('auth_error');
+                isAuthErrorRef.current = true;
                 setIsReconnecting(false);
                 setReconnectAttempts(0);
                 // Optionally trigger a logout or token refresh action here if passed as prop
@@ -188,20 +192,27 @@ export default function useChatSocket({
     // Health check - but don't include reconnectWebSocket in the interval to avoid loops
     healthIntervalRef.current = setInterval(() => {
       const currentStatus = getConnectionStatus();
-      if (currentStatus !== 'connected') {
-        setConnectionStatus('reconnecting');
-        // Don't call reconnectWebSocket here - it will cause infinite loops
-        // The onConnectionLost handler in connectSocket already handles reconnection
-      } else {
+      if (currentStatus !== 'connected' && currentStatus !== 'connecting') {
+        // If we are disconnected and NOT in an auth error state, try to reconnect
+        if (!isAuthErrorRef.current) {
+          console.log('[Frontend] Health Check: Socket disconnected, triggering reconnect...');
+          setConnectionStatus('reconnecting');
+          if (reconnectRef.current) {
+            reconnectRef.current();
+          }
+        }
+      } else if (currentStatus === 'connected') {
         setConnectionStatus('connected');
+        isAuthErrorRef.current = false; // Reset auth error flag on successful connection
       }
-    }, 15000);
+    }, 5000); // Check every 5 seconds (more frequent for better responsiveness)
 
     return () => {
       if (healthIntervalRef.current) clearInterval(healthIntervalRef.current);
       try { disconnectSocket(); } catch { }
       clearTimeout(typingTimeoutRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const lastTypingTimeRef = useRef(0);
