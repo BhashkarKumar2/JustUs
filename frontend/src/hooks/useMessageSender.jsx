@@ -16,10 +16,11 @@ export default function useMessageSender({
     const [replyingTo, setReplyingTo] = useState(null);
     const sendingRef = useRef(false);
 
-    const sendMessage = async (e) => {
+    const sendMessage = async (e, contentOverride = null) => {
         e?.preventDefault();
+        const finalText = contentOverride !== null ? contentOverride : text;
 
-        if (!text.trim() || sendingRef.current || sending) return;
+        if (!finalText.trim() || sendingRef.current || sending) return;
 
         sendingRef.current = true;
         setSending(true);
@@ -38,7 +39,7 @@ export default function useMessageSender({
             const success = sendSocketMessage({
                 id: editingMessage.id,
                 type: 'text',
-                content: text.trim(),
+                content: finalText.trim(),
                 receiverId: targetUserId,
                 conversationId,
                 senderId: user.id
@@ -55,14 +56,14 @@ export default function useMessageSender({
             const receiverPublicKey = encryption.getPublicKeyForUser(targetUserId);
             let encryptedData = null;
             if (receiverPublicKey && encryption.getKeyPair()) {
-                encryptedData = encryption.encryptMessage(text.trim(), receiverPublicKey);
+                encryptedData = encryption.encryptMessage(finalText.trim(), receiverPublicKey);
             }
 
             // 2. Optimistic Update (Temp Message)
             const tempMessage = {
                 id: 'temp-' + Date.now(),
                 type: 'text',
-                content: text.trim(), // Plaintext locally
+                content: finalText.trim(), // Plaintext locally
                 senderId: user.id,
                 receiverId: targetUserId,
                 conversationId,
@@ -90,11 +91,11 @@ export default function useMessageSender({
                 conversationId,
                 senderId: user.id,
                 replyTo: replyingTo?.id || null,
-                plaintext: text.trim() // Optional: for server-side features like translation if needed, otherwise omit for pure E2EE
+                plaintext: finalText.trim() // Optional: for server-side features like translation if needed, otherwise omit for pure E2EE
             } : {
                 receiverId: targetUserId,
                 type: 'text',
-                content: text.trim(),
+                content: finalText.trim(),
                 conversationId,
                 senderId: user.id,
                 replyTo: replyingTo?.id || null

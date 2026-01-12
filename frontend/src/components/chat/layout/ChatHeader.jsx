@@ -60,10 +60,10 @@ export default function ChatHeader({
 
   // Common button styles
   const iconButtonStyle = {
-    width: 'clamp(36px, 10vw, 40px)',
-    height: 'clamp(36px, 10vw, 40px)',
-    minWidth: '36px',
-    minHeight: '36px',
+    width: '40px',
+    height: '40px',
+    minWidth: '40px',
+    minHeight: '40px',
     borderRadius: '50%',
     background: 'rgba(99, 102, 241, 0.1)',
     border: 'none',
@@ -83,7 +83,7 @@ export default function ChatHeader({
       padding: '12px 16px',
       display: 'flex',
       alignItems: 'center',
-      gap: 'clamp(6px, 2vw, 12px)',
+      gap: '12px',
       /* backdropFilter: 'blur(20px)', -- REMOVED for performance */
       /* WebkitBackdropFilter: 'blur(20px)', */
       borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)'}`,
@@ -133,14 +133,15 @@ export default function ChatHeader({
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
+          <div className="profile-btn" style={{
             fontWeight: 600,
             fontSize: '16px',
             color: colors.headerText,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>
+            textOverflow: 'ellipsis',
+            cursor: 'pointer'
+          }} onClick={() => setShowProfileModal(true)}>
             {displayUser?.displayName || displayUser?.username || 'User'}
           </div>
           <div style={{
@@ -161,7 +162,7 @@ export default function ChatHeader({
       </div>
 
       {/* Action Buttons - Voice, Video, More Menu */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
 
         {/* Voice Call Button */}
         {otherUser && voiceCallState === 'idle' && videoCallState === 'idle' && (
@@ -177,11 +178,13 @@ export default function ChatHeader({
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)'}
             title={connectionStatus === 'connected' ? 'Voice call' : 'Connect to enable calls'}
           >
+            {/* Phone Icon instead of User Plus */}
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
             </svg>
           </button>
         )}
+
 
         {/* Video Call Button */}
         {otherUser && voiceCallState === 'idle' && videoCallState === 'idle' && (

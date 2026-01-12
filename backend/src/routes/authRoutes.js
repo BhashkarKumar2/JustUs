@@ -10,7 +10,7 @@ const corsMiddleware = (req, res, next) => {
     const origin = req.headers.origin;
     const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim());
 
-    // SECURITY: Only allow explicitly configured origins, no wildcard fallback
+    // Only allow explicitly configured origins
     if (origin && allowedOrigins.includes(origin)) {
         res.header('Access-Control-Allow-Origin', origin);
     }

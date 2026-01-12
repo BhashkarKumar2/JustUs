@@ -27,9 +27,11 @@ import useMessageSender from '../../hooks/useMessageSender';
 import { forwardMessage } from '../../services/chat';
 import { saveWallpaper } from '../../services/wallpaperService';
 import { mergeMessages } from '../../utils/chatUtils';
+import OnboardingTour from '../../components/OnboardingTour';
 
 export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwitcher, setShowContactSwitcher, theme = 'light' }) {
   const encryption = useEncryption();
+  const [showTour, setShowTour] = useState(false);
 
   // Custom Hooks
   const {
@@ -115,8 +117,20 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
         encryption.exchangeKey();
       }
     }, 500);
-    return () => clearTimeout(keyExchangeTimeout);
   }, []);
+
+  // Onboarding Tour Trigger
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('hasSeenTour_v2');
+    if (!hasSeenTour) {
+      setTimeout(() => setShowTour(true), 1500); // Small delay for UX
+    }
+  }, []);
+
+  const handleTourClose = () => {
+    setShowTour(false);
+    localStorage.setItem('hasSeenTour_v2', 'true');
+  };
 
   // Theme effect
   useEffect(() => {
@@ -603,6 +617,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
           colors={colors}
         />
       )}
+      <OnboardingTour isOpen={showTour} onClose={handleTourClose} />
     </div>
   );
 }

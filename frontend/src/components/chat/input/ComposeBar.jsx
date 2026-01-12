@@ -38,21 +38,37 @@ export default function ComposeBar({
   }, [replyingTo]);
 
 
-  // Check if bot mode is active
-  useEffect(() => {
-    const botTriggered = text.trim().startsWith('@#');
-    setIsBotActive(botTriggered);
-  }, [text]);
+  // Check if bot mode is active  -- REMOVED
 
   const handleBotDeactivate = () => {
-    setText('');
     setIsBotActive(false);
+  };
+
+  const toggleAi = () => {
+    setIsBotActive(prev => !prev);
+    inputRef.current?.focus();
+  };
+
+  const handleSend = (e) => {
+    e?.preventDefault();
+    if (sending || uploading || !text.trim()) return;
+
+    // Inject AI prefix if bot mode is active
+    let contentOverride = null;
+    if (isBotActive) {
+      // Ensure we don't double prefix if user manually typed it (edge case)
+      if (!text.startsWith('@#')) {
+        contentOverride = '@# ' + text;
+      }
+    }
+
+    send(e, contentOverride);
   };
 
   return (
     <>
       <form
-        onSubmit={send}
+        onSubmit={handleSend}
         style={{
           background: isDragging ? (theme === 'dark' ? 'rgba(31, 44, 51, 0.8)' : 'rgba(224, 231, 255, 0.6)') : colors.inputBg,
           backdropFilter: 'blur(10px)',
@@ -162,6 +178,29 @@ export default function ComposeBar({
             )}
           </button>
 
+          <button
+            className="ai-toggle-btn p-2 rounded-full transition-all duration-300"
+            style={{
+              background: isBotActive ? 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' : 'transparent',
+              color: isBotActive ? 'white' : colors.inputText,
+              boxShadow: isBotActive ? '0 2px 10px rgba(99, 102, 241, 0.3)' : 'none',
+              transform: isBotActive ? 'scale(1.1)' : 'scale(1)'
+            }}
+            onMouseEnter={e => {
+              if (!isBotActive) e.currentTarget.style.background = theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+            }}
+            onMouseLeave={e => {
+              if (!isBotActive) e.currentTarget.style.background = 'transparent';
+            }}
+            onClick={toggleAi}
+            title={isBotActive ? "Deactivate AI" : "Activate AI Companion"}
+          >
+            {/* AI Icon */}
+            <svg xmlns="http://www.w3.org/2000/svg" fill={isBotActive ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '24px', height: '24px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.035-.259a3.375 3.375 0 002.456-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM10.5 7.5L12 6m-2.25 4.5L12 12m-2.25 4.5L12 18" />
+            </svg>
+          </button>
+
           <input
             ref={inputRef}
             className="placeholder-gray-500 dark:placeholder-gray-400"
@@ -181,7 +220,7 @@ export default function ComposeBar({
             placeholder={otherUser ? `Message ${otherUser.displayName || otherUser.username}` : 'Type a message...'}
             value={text}
             onChange={e => setText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(e); } }}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
             onInput={onTyping}
             disabled={sending || uploading || !otherUser}
             autoFocus={typeof window !== 'undefined' && window.innerWidth > 768}

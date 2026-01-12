@@ -93,11 +93,9 @@ api.interceptors.request.use(
     }
 );
 
-// Add response interceptor
+// Attach the response interceptor to handle 401 token refreshes
 api.interceptors.response.use(
-    (response) => {
-        return response;
-    },
+    (response) => response,
     responseInterceptor(api)
 );
 

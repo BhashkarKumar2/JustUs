@@ -48,8 +48,6 @@ export const register = async (req, res) => {
   try {
     const { username, email, password, displayName } = req.body;
 
-    console.log(`Registration attempt for user: ${username}`);
-
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
@@ -519,8 +517,6 @@ export const uploadAvatar = async (req, res) => {
     // Store the file ID as avatar URL (will be retrieved from GridFS by ID)
     user.avatarUrl = `/api/auth/avatar/${req.file.id.toString()}`;
     await user.save();
-
-    console.log('[auth] Avatar uploaded for user:', req.userId, 'File ID:', req.file.id);
 
     res.json({
       message: 'Avatar uploaded successfully',

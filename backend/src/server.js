@@ -116,17 +116,13 @@ app.use(cookieParser());
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Request logging in development
+// Request logging in development
 if (NODE_ENV === 'development') {
-  app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path}`);
-    next();
-  });
+  // app.use((req, res, next) => { console.log(`${req.method} ${req.path}`); next(); });
 }
 
-// Apply rate limiting to all API routes (skip in development)
 // Apply rate limiting to all API routes
 app.use('/api/', apiLimiter);
-console.log('✓ Rate limiting enabled');
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -163,11 +159,10 @@ app.use(errorHandler);
 
 
 
-// Socket.IO configuration
-// Socket.IO configuration
+// --- Socket.IO Setup ---
 const io = new Server(httpServer, {
-  cors: corsOptions, // Use the same CORS configuration as Express
-  pingTimeout: 60000, // Increase ping timeout to handle slower connections
+  cors: corsOptions,
+  pingTimeout: 60000,
   pingInterval: 25000
 });
 
