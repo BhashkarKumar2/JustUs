@@ -12,3 +12,9 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Build/Lint outputs
+*.txt
+
+# Vite temporary files
+*.timestamp-*.mjs

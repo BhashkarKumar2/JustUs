@@ -336,14 +336,14 @@ export default function AudioMessage({ message, mine, colors, theme }) {
                       {speakingTranslated ? 'Stop' : 'Play'} translation
                     </button>
                   </div>
-                  <div className="italic opacity-90">"{message.metadata.translatedTranscript}"</div>
+                  <div className="italic opacity-90">&quot;{message.metadata.translatedTranscript}&quot;</div>
                 </div>
               )}
 
               {/* Display transcript if available */}
               {message.metadata?.transcript && (
                 <div className="mt-2 px-3 py-2 rounded-lg text-sm italic opacity-80" style={{ borderLeft: '3px solid currentColor', background: 'rgba(0,0,0,0.05)' }}>
-                  💬 "{message.metadata.transcript}"
+                  💬 &quot;{message.metadata.transcript}&quot;
                 </div>
               )}
             </div>

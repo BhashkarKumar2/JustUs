@@ -131,12 +131,8 @@ export const logout = async () => {
 };
 
 export const updateProfile = async (data) => {
-  try {
-    const response = await api.put('/api/auth/profile', data);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.put('/api/auth/profile', data);
+  return response.data;
 };
 
 export const forgotPassword = async (email) => {

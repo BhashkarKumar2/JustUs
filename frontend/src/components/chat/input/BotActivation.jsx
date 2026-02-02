@@ -34,7 +34,7 @@ const BotActivation = ({ isActive, onDeactivate }) => {
         <div className="bot-activation-text">
           <div className="bot-activation-title">🤖 Bot Assistant Active</div>
           <div className="bot-activation-subtitle">
-            Ask me anything! I'm here to help.
+            Ask me anything! I&apos;m here to help.
           </div>
         </div>
         <button

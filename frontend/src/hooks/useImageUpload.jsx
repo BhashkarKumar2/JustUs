@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { getAuthenticatedApi } from '../services/api';
-import { sendSocketMessage } from '../services/socket';
+import { sendSocketMessage, getSocket } from '../services/socket';
 import { toast } from 'react-hot-toast';
 
-export default function useImageUpload({ userId, otherUserId, conversationId, setMessages }) {
+export default function useImageUpload({ userId, otherUserId, conversationId, groupId, setMessages }) {
   const [uploading, setUploading] = useState(false);
 
   // Trigger file selection dialog
@@ -49,8 +49,9 @@ export default function useImageUpload({ userId, otherUserId, conversationId, se
       type,
       content: URL.createObjectURL(file), // Use local blob for immediate preview
       senderId: userId,
-      receiverId: otherUserId,
-      conversationId,
+      receiverId: otherUserId, // Might be null for groups
+      conversationId, // Might be null for groups
+      groupId, // Connected to a group if present
       timestamp: new Date().toISOString(),
       temporary: true,
       metadata
@@ -63,6 +64,7 @@ export default function useImageUpload({ userId, otherUserId, conversationId, se
       const fd = new FormData();
       fd.append('file', file);
       if (conversationId) fd.append('conversationId', conversationId);
+      if (groupId) fd.append('groupId', groupId);
 
       const authenticatedApi = getAuthenticatedApi();
       const res = await authenticatedApi.post('/api/media/upload', fd, {
@@ -85,21 +87,36 @@ export default function useImageUpload({ userId, otherUserId, conversationId, se
       const finalMetadata = { ...metadata };
       delete finalMetadata.progress;
 
-      // Update the temp message with real URL and finalize
-      // NOTE: We keep it temporary until we send the socket message to avoid flickering, 
-      // or we can just send the socket message and let the real message replace it.
-      // Better to rely on the socket/api flow now.
+      // Send via socket
+      const socket = getSocket();
+      let success = false;
 
-      const success = sendSocketMessage({
-        receiverId: otherUserId || 'other',
-        type,
-        content: url,
-        conversationId,
-        senderId: userId,
-        metadata: finalMetadata
-      });
+      if (groupId) {
+        // Group Chat send
+        if (socket) {
+          socket.emit('group.send', {
+            groupId,
+            content: url,
+            type,
+            senderId: userId,
+            metadata: finalMetadata
+          });
+          success = true; // Assumed success if connected
+        }
+      } else {
+        // 1-on-1 Chat send
+        success = sendSocketMessage({
+          receiverId: otherUserId || 'other',
+          type,
+          content: url,
+          conversationId,
+          senderId: userId,
+          metadata: finalMetadata
+        });
+      }
 
-      if (!success) {
+      if (!success && !groupId) {
+        // Only fallback to API for 1-on-1 if socket fails (Group API fallback not fully implemented in this hook yet)
         try {
           const sentMsg = await authenticatedApi.post('/api/chat/messages', {
             type,
@@ -116,7 +133,6 @@ export default function useImageUpload({ userId, otherUserId, conversationId, se
         }
       } else {
         // Socket sent successfully - remove temp message since server will echo back the real one
-        // The real message will have a proper server-generated ID
         setMessages(prev => prev.filter(msg => msg.id !== tempId));
       }
     } catch (error) {
@@ -127,12 +143,6 @@ export default function useImageUpload({ userId, otherUserId, conversationId, se
       setUploading(false);
     }
   };
-
-  // Backward compatibility alias (if selectFile is called without arg, it won't do anything useful, 
-  // but existing code might rely on uploadImage doing everything. 
-  // We'll deprecate uploadImage in favor of explicit flow in ComposeBar).
-  // Actually, let's keep uploadImage for direct calls if we wanted, 
-  // but we are updating ComposeBar anyway.
 
   return { uploading, selectFile, uploadFile };
 }

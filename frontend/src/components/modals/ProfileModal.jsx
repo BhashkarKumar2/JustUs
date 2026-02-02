@@ -185,6 +185,13 @@ export default function ProfileModal({ show, onClose, user, onAvatarUpdate, onPr
     }
   }, [user]);
 
+  // Reset preview URL when modal opens
+  useEffect(() => {
+    if (show) {
+      setPreviewUrl(null);
+    }
+  }, [show]);
+
   if (!show) return null;
 
   const handleFileSelect = (e) => {

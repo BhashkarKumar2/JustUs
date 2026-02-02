@@ -3,22 +3,19 @@ import { loadAuthenticatedMedia, getAuthenticatedMediaUrl } from '../../../utils
 import BotMessage from './BotMessage';
 
 export default function MessageItem({ me, m, onEdit, onDelete, onContextMenu }) {
-  // Check if this is a bot message
-  if (m.isBot || m.senderId === 'bot') {
-    return <BotMessage message={m} />;
-  }
-
+  // All hooks must be called before any early returns (rules-of-hooks)
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const [mediaUrl, setMediaUrl] = useState(m.content);
+  const [, setMediaUrl] = useState(m.content);
   const [blobUrl, setBlobUrl] = useState(null);
-  const mine = me === m.senderId;
-  const isTemporary = m.temporary === true;
   const [menuOpen, setMenuOpen] = useState(false);
   const [showOriginal, setShowOriginal] = useState(true);
   const menuRef = useRef(null);
   const triggerRef = useRef(null);
+
+  const mine = me === m.senderId;
+  const isTemporary = m.temporary === true;
 
   // Load authenticated media for image and audio messages
   useEffect(() => {
@@ -81,6 +78,11 @@ export default function MessageItem({ me, m, onEdit, onDelete, onContextMenu }) 
     if (menuOpen) document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
   }, [menuOpen]);
+
+  // Check if this is a bot message - must be after all hooks
+  if (m.isBot || m.senderId === 'bot') {
+    return <BotMessage message={m} />;
+  }
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);

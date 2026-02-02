@@ -347,7 +347,7 @@ export default function ChatHeader({
           if (onAvatarUpdate) {
             onAvatarUpdate(newUrl);
           }
-          user.avatarUrl = newUrl;
+          // Note: Parent component handles user state update via onAvatarUpdate
           setShowProfileModal(false);
         }}
         onProfileUpdate={onProfileUpdate}

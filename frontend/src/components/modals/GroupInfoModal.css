@@ -1,0 +1,361 @@
+.group-info-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* Light Mode (Default) */
+.group-info-modal {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+}
+
+.group-info-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.group-info-modal .modal-header h2 {
+    margin: 0;
+    color: #1f2937;
+}
+
+.group-info-modal .close-btn {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.group-info-modal .close-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.modal-content {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.group-profile {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.group-avatar-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 16px;
+}
+
+.group-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.group-avatar-large .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 600;
+}
+
+.group-profile h3 {
+    margin: 0 0 8px;
+    color: #1f2937;
+}
+
+.group-description {
+    color: #6b7280;
+    margin: 0 0 12px;
+}
+
+.group-stats {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+.section {
+    margin-bottom: 24px;
+}
+
+.section h4 {
+    margin: 0 0 12px;
+    color: #6b7280;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.invite-code-section {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.invite-code {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.invite-code code {
+    flex: 1;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    font-family: monospace;
+    color: #667eea;
+}
+
+.invite-code button,
+.invite-code-section>button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #667eea;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.members-list {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.member-item:last-child {
+    border-bottom: none;
+}
+
+.member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.member-avatar .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-weight: 600;
+}
+
+.member-info {
+    flex: 1;
+}
+
+.member-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #1f2937;
+}
+
+.member-username {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.badge.creator {
+    background: rgba(255, 215, 0, 0.2);
+    color: #b8860b;
+}
+
+.badge.admin {
+    background: rgba(102, 126, 234, 0.2);
+    color: #667eea;
+}
+
+.badge.you {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.member-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.member-actions button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.member-actions button:hover {
+    opacity: 1;
+}
+
+.error-message {
+    padding: 12px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+    text-align: center;
+}
+
+.modal-actions {
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+}
+
+.btn-danger {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    background: #ff6b6b;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #ff5252;
+}
+
+.btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Dark Mode Overrides */
+body.dark .group-info-modal-backdrop {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+body.dark .group-info-modal {
+    background: rgba(26, 26, 46, 0.98);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+}
+
+body.dark .group-info-modal .modal-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .group-info-modal .modal-header h2 {
+    color: #e5e7eb;
+}
+
+body.dark .group-info-modal .close-btn {
+    color: #888;
+}
+
+body.dark .group-info-modal .close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .group-profile h3 {
+    color: #e5e7eb;
+}
+
+body.dark .group-description {
+    color: #888;
+}
+
+body.dark .group-stats {
+    color: #666;
+}
+
+body.dark .section h4 {
+    color: #888;
+}
+
+body.dark .invite-code-section {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark .invite-code code {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+body.dark .members-list {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .member-item {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+body.dark .member-name {
+    color: #e5e7eb;
+}
+
+body.dark .member-username {
+    color: #888;
+}
+
+body.dark .badge.creator {
+    color: #ffd700;
+}
+
+body.dark .modal-actions {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}

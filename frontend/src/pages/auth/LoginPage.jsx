@@ -162,7 +162,7 @@ export default function LoginPage({ onLogin, onSwitchToSignup, onSwitchToForgotP
 
           <div className="mt-8 text-center">
             <p className="text-white/60 text-sm">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <button
                 onClick={onSwitchToSignup}
                 className="font-bold text-white hover:text-indigo-200 transition-colors ml-1"

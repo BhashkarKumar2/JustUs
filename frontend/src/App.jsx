@@ -68,20 +68,21 @@ export default function App() {
     }
   }, [user]);
 
-  // Sync theme changes from localStorage
+  // Sync theme changes - uses CustomEvent for same-tab, storage event for cross-tab
   useEffect(() => {
-    const handleStorageChange = () => {
-      setTheme(localStorage.getItem('theme') || 'dark');
+    // Cross-tab theme sync via storage event
+    const handleStorageChange = (e) => {
+      if (e.key === 'theme') {
+        setTheme(e.newValue || 'dark');
+      }
     };
     window.addEventListener('storage', handleStorageChange);
 
-    // Also check for theme changes every 100ms (for same-tab updates)
-    const interval = setInterval(() => {
-      const currentTheme = localStorage.getItem('theme') || 'dark';
-      if (currentTheme !== theme) {
-        setTheme(currentTheme);
-      }
-    }, 100);
+    // Same-tab theme sync via CustomEvent (no polling needed!)
+    const handleThemeChange = (e) => {
+      setTheme(e.detail || 'dark');
+    };
+    window.addEventListener('themeChange', handleThemeChange);
 
     // Apply theme class to body for global styles (scrollbars etc)
     if (theme === 'dark') {
@@ -94,7 +95,7 @@ export default function App() {
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
+      window.removeEventListener('themeChange', handleThemeChange);
     };
   }, [theme]);
 
@@ -140,6 +141,8 @@ export default function App() {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
+    // Dispatch CustomEvent for same-tab sync (replaces 100ms polling)
+    window.dispatchEvent(new CustomEvent('themeChange', { detail: newTheme }));
   };
 
   if (loading) {

@@ -179,7 +179,7 @@ export default function ComposeBar({
           </button>
 
           <button
-            className="ai-toggle-btn p-2 rounded-full transition-all duration-300"
+            className="bot-toggle-btn p-2 rounded-full transition-all duration-300"
             style={{
               background: isBotActive ? 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' : 'transparent',
               color: isBotActive ? 'white' : colors.inputText,
@@ -271,7 +271,7 @@ export default function ComposeBar({
         </div>
 
         {connectionStatus !== 'connected' && (
-          <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', marginTop: '4px', padding: '8px 12px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '0 0 8px 8px', fontSize: '0.75rem', color: '#92400e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: '100%', marginBottom: '8px', padding: '8px 12px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '12px', fontSize: '0.75rem', color: '#92400e', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 5 }}>
             <div style={{ width: '8px', height: '8px', background: '#fbbf24', borderRadius: '50%', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
             <span>{connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Offline - messages will be sent when connection is restored'}</span>
           </div>

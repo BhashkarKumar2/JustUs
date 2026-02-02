@@ -28,6 +28,11 @@ import { forwardMessage } from '../../services/chat';
 import { saveWallpaper } from '../../services/wallpaperService';
 import { mergeMessages } from '../../utils/chatUtils';
 import OnboardingTour from '../../components/OnboardingTour';
+// Group Chat Imports
+import GroupListPanel from '../../components/groups/GroupListPanel';
+import GroupChatPage from '../../pages/groups/GroupChatPage';
+import CreateGroupModal from '../../components/modals/CreateGroupModal';
+import * as groupService from '../../services/groupService';
 
 export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwitcher, setShowContactSwitcher, theme = 'light' }) {
   const encryption = useEncryption();
@@ -103,6 +108,10 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [savingWallpaper, setSavingWallpaper] = useState(false);
+  // Group Chat State
+  const [activeTab, setActiveTab] = useState('chats'); // 'chats' or 'groups'
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 
   // Refs
   const chatContainerRef = useRef(null);
@@ -117,6 +126,8 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
         encryption.exchangeKey();
       }
     }, 500);
+    return () => clearTimeout(keyExchangeTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Onboarding Tour Trigger
@@ -145,7 +156,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
   useEffect(() => {
     if (showContactSwitcher) {
       setShowOtherUserModal(true);
-      try { setShowContactSwitcher(false); } catch (e) { }
+      try { setShowContactSwitcher(false); } catch { /* Parent state update - intentionally ignored */ }
     }
   }, [showContactSwitcher, setShowContactSwitcher]);
 
@@ -187,6 +198,31 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
 
   const handleAvatarUpdate = (newUrl) => {
     if (onUserUpdate) onUserUpdate({ avatarUrl: newUrl });
+  };
+
+  // Group Handlers
+  const handleCreateGroup = async (groupData) => {
+    try {
+      const response = await groupService.createGroup(
+        groupData.name,
+        groupData.description,
+        groupData.memberIds
+      );
+      toast.success(`Group "${response.group.name}" created!`);
+      setSelectedGroup(response.group);
+      setActiveTab('groups');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create group');
+      throw err;
+    }
+  };
+
+  const handleSelectGroup = (group) => {
+    setSelectedGroup(group);
+  };
+
+  const handleBackFromGroup = () => {
+    setSelectedGroup(null);
   };
 
   // Image Upload Hook
@@ -375,249 +411,328 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
         position: 'relative'
       }}>
 
-        {/* Wallpaper Layer */}
-        <NotificationManager />
-        {wallpaperActive && resolvedWallpaperUrl && (
-          <div
-            aria-hidden
+        {/* Tab Navigation - Chats / Groups */}
+        <div style={{
+          display: 'flex',
+          borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+          background: darkMode ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)',
+          zIndex: 10
+        }}>
+          <button
+            onClick={() => setActiveTab('chats')}
             style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: wallpaperIsGradient ? resolvedWallpaperUrl : `url(${resolvedWallpaperUrl})`,
-              backgroundSize: 'contain',
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'center',
-              opacity: wallpaperPreview.opacity ?? 0.9,
-              transition: 'opacity 0.2s ease',
-              zIndex: 0,
-              pointerEvents: 'none'
+              flex: 1,
+              padding: '12px 16px',
+              border: 'none',
+              background: activeTab === 'chats'
+                ? (darkMode ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.2)')
+                : 'transparent',
+              color: activeTab === 'chats' ? '#667eea' : (darkMode ? '#888' : '#666'),
+              fontWeight: activeTab === 'chats' ? '600' : '400',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              borderBottom: activeTab === 'chats' ? '2px solid #667eea' : '2px solid transparent'
             }}
-          />
-        )}
-
-        <ChatHeader
-          otherUser={otherUser}
-          connectionStatus={connectionStatus}
-          typingUser={typingUser}
-          isReconnecting={isReconnecting}
-          reconnectAttempts={reconnectAttempts}
-          theme={theme}
-          availableUsers={availableUsers}
-          setShowOtherUserModal={setShowOtherUserModal}
-          setShowSearchModal={setShowSearchModal}
-          user={user}
-          messages={messages}
-          colors={colors}
-          onStartVoiceCall={startVoiceCall}
-          onStartVideoCall={startVideoCall}
-          voiceCallState={voiceCallState}
-          videoCallState={videoCallState}
-          otherUserOnline={otherUserOnline}
-          onLogout={onLogout}
-          onAvatarUpdate={handleAvatarUpdate}
-          onProfileUpdate={onUserUpdate}
-          onOpenWallpaper={openWallpaperPanel}
-          wallpaperActive={wallpaperActive}
-          onOpenLightbox={handleOpenLightbox}
-        />
-
-        {/* Status Banners */}
-        {realConnectionStatus !== 'connected' && (
-          <div style={{ padding: '8px', backgroundColor: realConnectionStatus === 'reconnecting' ? '#f59e0b' : '#ef4444', color: 'white', textAlign: 'center', zIndex: 10 }}>
-            {realConnectionStatus === 'reconnecting' ? '🔄 Reconnecting...' : '⚠️ Disconnected'}
-          </div>
-        )}
-        {showRateLimitWarning && (
-          <div style={{ padding: '8px', backgroundColor: '#fbbf24', color: '#78350f', textAlign: 'center', zIndex: 10 }}>
-            ⚠️ Too many messages. Wait {rateLimitRetryAfter}s.
-          </div>
-        )}
-
-        {/* Messages Area */}
-        <div
-          ref={chatContainerRef}
-          onScroll={handleScroll}
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            background: wallpaperActive ? 'transparent' : colors.bg,
-            position: 'relative',
-            willChange: 'transform',
-            zIndex: 1
-          }}
-        >
-          <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', zIndex: 1 }}>
-            <ChatMessages
-              messages={messages}
-              user={user}
-              otherUser={otherUser}
-              onEdit={setEditingMessage}
-              onDelete={onDelete}
-              onReply={(m) => { setReplyingTo(m); }}
-              onOpenLightbox={handleOpenLightbox}
-              onForward={(m) => { setForwardingMessage(m); setShowForwardModal(true); }}
-              colors={colors}
-              theme={theme}
-            />
-            <TypingIndicator typingUser={typingUser} colors={colors} />
-          </div>
-
-          {userScrolledUp && (
-            <ScrollToBottomButton onClick={() => { scrollToBottom(); setUserScrolledUp(false); }} />
-          )}
-          <div ref={messagesEndRef} />
+          >
+            💬 Chats
+          </button>
+          <button
+            onClick={() => setActiveTab('groups')}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              border: 'none',
+              background: activeTab === 'groups'
+                ? (darkMode ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.2)')
+                : 'transparent',
+              color: activeTab === 'groups' ? '#667eea' : (darkMode ? '#888' : '#666'),
+              fontWeight: activeTab === 'groups' ? '600' : '400',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              borderBottom: activeTab === 'groups' ? '2px solid #667eea' : '2px solid transparent'
+            }}
+          >
+            👥 Groups
+          </button>
         </div>
 
-        <ComposeBar
-          text={text}
-          setText={setText}
-          onTyping={() => onTypingHook(otherUserId, conversationId)}
-          otherUser={otherUser}
-          uploading={uploading}
-          selectFile={selectFile}
-          uploadFile={uploadFile}
-          recording={recording}
-          startRecording={startRecording}
-          stopRecording={stopRecording}
-          sending={sending}
-          editingMessage={editingMessage}
-          cancelEdit={() => setEditingMessage(null)}
-          replyingTo={replyingTo}
-          cancelReply={() => setReplyingTo(null)}
-          send={sendMessage}
-          connectionStatus={connectionStatus}
-          colors={colors}
-          currentUserId={user.id}
-          theme={theme}
+        {/* Group View */}
+        {activeTab === 'groups' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {selectedGroup ? (
+              <GroupChatPage
+                user={user}
+                groupId={selectedGroup.id || selectedGroup._id}
+                onBack={handleBackFromGroup}
+                theme={theme}
+              />
+            ) : (
+              <GroupListPanel
+                user={user}
+                onSelectGroup={handleSelectGroup}
+                selectedGroupId={selectedGroup?.id}
+                onCreateGroup={() => setShowCreateGroupModal(true)}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Existing 1-to-1 Chat View */}
+        {activeTab === 'chats' && (
+          <>
+            {/* Wallpaper Layer */}
+            <NotificationManager />
+            {wallpaperActive && resolvedWallpaperUrl && (
+              <div
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: wallpaperIsGradient ? resolvedWallpaperUrl : `url(${resolvedWallpaperUrl})`,
+                  backgroundSize: 'contain',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center',
+                  opacity: wallpaperPreview.opacity ?? 0.9,
+                  transition: 'opacity 0.2s ease',
+                  zIndex: 0,
+                  pointerEvents: 'none'
+                }}
+              />
+            )}
+
+            <ChatHeader
+              otherUser={otherUser}
+              connectionStatus={connectionStatus}
+              typingUser={typingUser}
+              isReconnecting={isReconnecting}
+              reconnectAttempts={reconnectAttempts}
+              theme={theme}
+              availableUsers={availableUsers}
+              setShowOtherUserModal={setShowOtherUserModal}
+              setShowSearchModal={setShowSearchModal}
+              user={user}
+              messages={messages}
+              colors={colors}
+              onStartVoiceCall={startVoiceCall}
+              onStartVideoCall={startVideoCall}
+              voiceCallState={voiceCallState}
+              videoCallState={videoCallState}
+              otherUserOnline={otherUserOnline}
+              onLogout={onLogout}
+              onAvatarUpdate={handleAvatarUpdate}
+              onProfileUpdate={onUserUpdate}
+              onOpenWallpaper={openWallpaperPanel}
+              wallpaperActive={wallpaperActive}
+              onOpenLightbox={handleOpenLightbox}
+            />
+
+            {/* Status Banners */}
+            {realConnectionStatus !== 'connected' && (
+              <div style={{ padding: '8px', backgroundColor: realConnectionStatus === 'reconnecting' ? '#f59e0b' : '#ef4444', color: 'white', textAlign: 'center', zIndex: 10 }}>
+                {realConnectionStatus === 'reconnecting' ? '🔄 Reconnecting...' : '⚠️ Disconnected'}
+              </div>
+            )}
+            {showRateLimitWarning && (
+              <div style={{ padding: '8px', backgroundColor: '#fbbf24', color: '#78350f', textAlign: 'center', zIndex: 10 }}>
+                ⚠️ Too many messages. Wait {rateLimitRetryAfter}s.
+              </div>
+            )}
+
+            {/* Messages Area */}
+            <div
+              ref={chatContainerRef}
+              onScroll={handleScroll}
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                background: wallpaperActive ? 'transparent' : colors.bg,
+                position: 'relative',
+                willChange: 'transform',
+                zIndex: 1
+              }}
+            >
+              <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', zIndex: 1 }}>
+                <ChatMessages
+                  messages={messages}
+                  user={user}
+                  otherUser={otherUser}
+                  onEdit={setEditingMessage}
+                  onDelete={onDelete}
+                  onReply={(m) => { setReplyingTo(m); }}
+                  onOpenLightbox={handleOpenLightbox}
+                  onForward={(m) => { setForwardingMessage(m); setShowForwardModal(true); }}
+                  colors={colors}
+                  theme={theme}
+                />
+                <TypingIndicator typingUser={typingUser} colors={colors} />
+              </div>
+
+              {userScrolledUp && (
+                <ScrollToBottomButton onClick={() => { scrollToBottom(); setUserScrolledUp(false); }} />
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <ComposeBar
+              text={text}
+              setText={setText}
+              onTyping={() => onTypingHook(otherUserId, conversationId)}
+              otherUser={otherUser}
+              uploading={uploading}
+              selectFile={selectFile}
+              uploadFile={uploadFile}
+              recording={recording}
+              startRecording={startRecording}
+              stopRecording={stopRecording}
+              sending={sending}
+              editingMessage={editingMessage}
+              cancelEdit={() => setEditingMessage(null)}
+              replyingTo={replyingTo}
+              cancelReply={() => setReplyingTo(null)}
+              send={sendMessage}
+              connectionStatus={connectionStatus}
+              colors={colors}
+              currentUserId={user.id}
+              theme={theme}
+            />
+
+            {showOtherUserModal && (
+              <UserSelectModal
+                show={true}
+                availableUsers={availableUsers}
+                onClose={() => setShowOtherUserModal(false)}
+                onSelect={handleUserSelect}
+                currentUserId={user.id}
+                darkMode={darkMode}
+              />
+            )}
+
+            {showForwardModal && (
+              <UserSelectModal
+                show={true}
+                availableUsers={availableUsers.filter(u => u.id !== user.id)}
+                onClose={() => setShowForwardModal(false)}
+                onSelect={async (targetId) => {
+                  try {
+                    if (!forwardingMessage) return;
+                    const id = forwardingMessage.id || forwardingMessage._id;
+                    const res = await forwardMessage({ messageId: id, targetUserId: targetId });
+                    const newMessages = res.data?.messages || [];
+                    if (otherUserId === targetId) {
+                      setMessages(prev => mergeMessages(prev, newMessages));
+                      setTimeout(() => scrollToBottom(), 50);
+                    }
+                    // Auto-switch to the target user's chat
+                    handleUserSelect(targetId);
+
+                    setShowForwardModal(false);
+                    setForwardingMessage(null);
+                  } catch (err) {
+                    console.error('Forward failed:', err);
+                    toast.error(err.response?.data?.message || 'Failed to forward message');
+                  }
+                }}
+                currentUserId={user.id}
+                darkMode={darkMode}
+                title="Forward Message"
+              />
+            )}
+
+            {showSearchModal && (
+              <SmartSearch
+                conversationId={conversationId}
+                onClose={() => setShowSearchModal(false)}
+                onResultClick={(message) => {
+                  // Implementation would need to find message in history or load it
+                  console.log('Navigate to:', message.id);
+                  // Optional: Implement scroll to message logic here
+                }}
+                darkMode={darkMode}
+              />
+            )}
+
+            {lightbox.visible && (
+              <Lightbox
+                url={lightbox.url}
+                type={lightbox.type}
+                filename={lightbox.filename}
+                onClose={() => setLightbox({ visible: false, url: null, type: null })}
+              />
+            )}
+
+            {wallpaperPanelOpen && (
+              <WallpaperPanel
+                open={wallpaperPanelOpen}
+                onClose={closeWallpaperPanel}
+                value={wallpaperPreview}
+                onChange={setWallpaperPreview}
+                onSave={async (draft) => {
+                  try {
+                    // Optimistic visual update
+                    setWallpaperPreview(draft);
+                    setSavingWallpaper(true);
+
+                    await saveWallpaper(conversationId, draft);
+
+                    setWallpaperSettings(draft);
+                    closeWallpaperPanel();
+                  } catch (err) {
+                    console.error('Failed to save wallpaper', err);
+                    // Revert preview on error
+                    setWallpaperPreview(wallpaperSettings);
+                  } finally {
+                    setSavingWallpaper(false);
+                  }
+                }}
+                saving={savingWallpaper}
+                presets={wallpaperPresets}
+              />
+            )}
+
+            {(incomingVoiceCall || voiceCallState !== 'idle') && <VoiceCallModal
+              callState={voiceCallState}
+              incomingCall={incomingVoiceCall}
+              callDuration={voiceCallDuration}
+              otherUser={incomingVoiceCall?.caller || otherUser}
+              onAnswer={answerVoiceCall}
+              onReject={rejectVoiceCall}
+              onEnd={endVoiceCall}
+              localStreamRef={voiceLocalStreamRef}
+              remoteStreamRef={voiceRemoteStreamRef}
+              colors={colors}
+            />}
+
+            {(incomingVideoCall || videoCallState !== 'idle') && (
+              <VideoCallModal
+                callState={videoCallState}
+                incomingCall={incomingVideoCall}
+                callDuration={videoCallDuration}
+                otherUser={incomingVideoCall?.caller || otherUser}
+                isMuted={isMuted}
+                isVideoOff={isVideoOff}
+                onAnswer={answerVideoCall}
+                onReject={rejectVideoCall}
+                onEnd={endVideoCall}
+                onToggleMute={toggleMute}
+                onToggleVideo={toggleVideo}
+                localStream={videoLocalStream}
+                remoteStream={videoRemoteStream}
+                colors={colors}
+              />
+            )}
+            <OnboardingTour isOpen={showTour} onClose={handleTourClose} />
+          </>
+        )}
+
+        {/* Create Group Modal */}
+        <CreateGroupModal
+          show={showCreateGroupModal}
+          onClose={() => setShowCreateGroupModal(false)}
+          onCreateGroup={handleCreateGroup}
+          contacts={availableUsers}
         />
       </div>
-
-      {showOtherUserModal && (
-        <UserSelectModal
-          show={true}
-          availableUsers={availableUsers}
-          onClose={() => setShowOtherUserModal(false)}
-          onSelect={handleUserSelect}
-          currentUserId={user.id}
-          darkMode={darkMode}
-        />
-      )}
-
-      {showForwardModal && (
-        <UserSelectModal
-          show={true}
-          availableUsers={availableUsers.filter(u => u.id !== user.id)}
-          onClose={() => setShowForwardModal(false)}
-          onSelect={async (targetId) => {
-            try {
-              if (!forwardingMessage) return;
-              const id = forwardingMessage.id || forwardingMessage._id;
-              const res = await forwardMessage({ messageId: id, targetUserId: targetId });
-              const newMessages = res.data?.messages || [];
-              if (otherUserId === targetId) {
-                setMessages(prev => mergeMessages(prev, newMessages));
-                setTimeout(() => scrollToBottom(), 50);
-              }
-              // Auto-switch to the target user's chat
-              handleUserSelect(targetId);
-
-              setShowForwardModal(false);
-              setForwardingMessage(null);
-            } catch (err) {
-              console.error('Forward failed:', err);
-              toast.error(err.response?.data?.message || 'Failed to forward message');
-            }
-          }}
-          currentUserId={user.id}
-          darkMode={darkMode}
-          title="Forward Message"
-        />
-      )}
-
-      {showSearchModal && (
-        <SmartSearch
-          conversationId={conversationId}
-          onClose={() => setShowSearchModal(false)}
-          onResultClick={(message) => {
-            // Implementation would need to find message in history or load it
-            console.log('Navigate to:', message.id);
-            // Optional: Implement scroll to message logic here
-          }}
-          darkMode={darkMode}
-        />
-      )}
-
-      {lightbox.visible && (
-        <Lightbox
-          url={lightbox.url}
-          type={lightbox.type}
-          filename={lightbox.filename}
-          onClose={() => setLightbox({ visible: false, url: null, type: null })}
-        />
-      )}
-
-      {wallpaperPanelOpen && (
-        <WallpaperPanel
-          open={wallpaperPanelOpen}
-          onClose={closeWallpaperPanel}
-          value={wallpaperPreview}
-          onChange={setWallpaperPreview}
-          onSave={async (draft) => {
-            try {
-              // Optimistic visual update
-              setWallpaperPreview(draft);
-              setSavingWallpaper(true);
-
-              await saveWallpaper(conversationId, draft);
-
-              setWallpaperSettings(draft);
-              closeWallpaperPanel();
-            } catch (err) {
-              console.error('Failed to save wallpaper', err);
-              // Revert preview on error
-              setWallpaperPreview(wallpaperSettings);
-            } finally {
-              setSavingWallpaper(false);
-            }
-          }}
-          saving={savingWallpaper}
-          presets={wallpaperPresets}
-        />
-      )}
-
-      {(incomingVoiceCall || voiceCallState !== 'idle') && <VoiceCallModal
-        callState={voiceCallState}
-        incomingCall={incomingVoiceCall}
-        callDuration={voiceCallDuration}
-        otherUser={incomingVoiceCall?.caller || otherUser}
-        onAnswer={answerVoiceCall}
-        onReject={rejectVoiceCall}
-        onEnd={endVoiceCall}
-        localStreamRef={voiceLocalStreamRef}
-        remoteStreamRef={voiceRemoteStreamRef}
-        colors={colors}
-      />}
-
-      {(incomingVideoCall || videoCallState !== 'idle') && (
-        <VideoCallModal
-          callState={videoCallState}
-          incomingCall={incomingVideoCall}
-          callDuration={videoCallDuration}
-          otherUser={incomingVideoCall?.caller || otherUser}
-          isMuted={isMuted}
-          isVideoOff={isVideoOff}
-          onAnswer={answerVideoCall}
-          onReject={rejectVideoCall}
-          onEnd={endVideoCall}
-          onToggleMute={toggleMute}
-          onToggleVideo={toggleVideo}
-          localStream={videoLocalStream}
-          remoteStream={videoRemoteStream}
-          colors={colors}
-        />
-      )}
-      <OnboardingTour isOpen={showTour} onClose={handleTourClose} />
     </div>
   );
 }

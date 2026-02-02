@@ -70,5 +70,15 @@ export default defineConfig({
     },
     build: {
         outDir: 'build', // Output to 'build' to match CRA behavior
+        rollupOptions: {
+            output: {
+                // Split vendor chunks for better caching
+                manualChunks: {
+                    'vendor-react': ['react', 'react-dom'],
+                    'vendor-socket': ['socket.io-client'],
+                    'vendor-utils': ['axios', 'react-hot-toast'],
+                },
+            },
+        },
     },
 });

@@ -25,17 +25,17 @@ export default function VoiceCallModal({
 
   // Set up audio streams
   useEffect(() => {
-    if (localAudioRef.current && localStreamRef.current) {
+    if (localAudioRef.current && localStreamRef?.current) {
       localAudioRef.current.srcObject = localStreamRef.current;
       localAudioRef.current.muted = true; // Mute local audio to prevent echo
     }
-  }, [localStreamRef.current]);
+  }); // Run on every render to catch stream changes
 
   useEffect(() => {
-    if (remoteAudioRef.current && remoteStreamRef.current) {
+    if (remoteAudioRef.current && remoteStreamRef?.current) {
       remoteAudioRef.current.srcObject = remoteStreamRef.current;
     }
-  }, [remoteStreamRef.current]);
+  }); // Run on every render to catch stream changes
 
   if (callState === 'idle') return null;
 

@@ -211,7 +211,7 @@ export default function useChatInitialization(user, encryption, markMessagesAsRe
                             const decryptedContent = encryption.decryptMessage(msg.ciphertext, msg.nonce, senderPublicKey);
                             if (decryptedContent) return { ...msg, content: decryptedContent, encrypted: true };
                         }
-                    } catch (err) { }
+                    } catch (err) { /* Decryption failure - silently skip */ }
                 }
                 return msg;
             });

@@ -120,7 +120,7 @@ export default function VerifyEmailPage({ email, onVerificationSuccess, onBack, 
 
           <div className="mt-6 text-center">
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Didn't receive the code?{' '}
+              Didn&apos;t receive the code?{' '}
               <button
                 onClick={handleResend}
                 disabled={timer > 0 || resending}

@@ -19,6 +19,7 @@ import aiRoutes from './routes/aiRoutes.js';
 import botRoutes from './routes/botRoutes.js';
 import ttsRoutes from './routes/ttsRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import groupRoutes from './routes/groupRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import path from 'path';
@@ -134,6 +135,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/tts', ttsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/groups', groupRoutes);
 
 
 

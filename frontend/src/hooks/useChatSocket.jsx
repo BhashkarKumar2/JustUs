@@ -211,7 +211,7 @@ export default function useChatSocket({
 
     return () => {
       if (healthIntervalRef.current) clearInterval(healthIntervalRef.current);
-      try { disconnectSocket(); } catch { }
+      try { disconnectSocket(); } catch { /* Cleanup - ignore disconnect errors */ }
       clearTimeout(typingTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

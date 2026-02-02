@@ -11,12 +11,30 @@ const messageSchema = new mongoose.Schema({
   },
   receiverId: {
     type: String,
-    required: true
+    required: function () {
+      // Required only for 1-to-1 chats (when groupId is not set)
+      return !this.groupId;
+    }
   },
   conversationId: {
     type: String,
-    required: true
+    required: function () {
+      // Required only if groupId is not set (1-to-1 chat)
+      return !this.groupId;
+    }
   },
+  // Group chat support
+  groupId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group',
+    default: null
+  },
+  // @mentions in message (for @AI and @user)
+  mentions: [{
+    type: { type: String, enum: ['user', 'ai'], required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // null for @AI
+    displayName: { type: String }
+  }],
   type: {
     type: String,
     enum: ['text', 'image', 'audio', 'video', 'document', 'call'],
@@ -111,8 +129,9 @@ const messageSchema = new mongoose.Schema({
 
 // Indexes for performance
 messageSchema.index({ conversationId: 1, timestamp: -1 }); // Fast history retrieval
-messageSchema.index({ senderId: 1, timestamp: -1 });      // Fast "my sent" retrieval
-messageSchema.index({ receiverId: 1, timestamp: -1 });    // Fast "my received" retrieval
+messageSchema.index({ groupId: 1, timestamp: -1 });        // Fast group history retrieval
+messageSchema.index({ senderId: 1, timestamp: -1 });       // Fast "my sent" retrieval
+messageSchema.index({ receiverId: 1, timestamp: -1 });     // Fast "my received" retrieval
 
 const Message = mongoose.model('Message', messageSchema);
 

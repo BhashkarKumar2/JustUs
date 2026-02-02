@@ -3,24 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 const steps = [
-  {
-    target: '.profile-btn',
-    title: 'Your Profile & Contacts',
-    content: 'Click your name here to update your profile or switch contacts.',
-    position: 'bottom-left'
-  },
-  {
-    target: '.ai-toggle-btn',
-    title: 'AI Companion',
-    content: 'Tap the sparkle icon to toggle our advanced AI assistant.',
-    position: 'top-left'
-  },
-  {
-    target: 'button[title="More options"]', 
-    title: 'More Options',
-    content: 'Use this menu to search messages or customize your wallpaper.',
-    position: 'bottom-right'
-  }
+    {
+        target: '.profile-btn',
+        title: 'Your Profile & Contacts',
+        content: 'Click your name here to update your profile or switch contacts.',
+        position: 'bottom-left'
+    },
+    {
+        target: '.bot-toggle-btn',
+        title: 'AI Companion',
+        content: 'Tap the sparkle icon to toggle our advanced AI assistant.',
+        position: 'top-left'
+    },
+    {
+        target: 'button[title="More options"]',
+        title: 'More Options',
+        content: 'Use this menu to search messages or customize your wallpaper.',
+        position: 'bottom-right'
+    }
 ];
 
 export default function OnboardingTour({ isOpen, onClose }) {

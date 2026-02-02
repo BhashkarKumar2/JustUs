@@ -6,6 +6,8 @@ export default function ThemeToggle({ theme, setTheme }) {
     setTheme(newTheme);
     try {
       localStorage.setItem('theme', newTheme);
+      // Dispatch CustomEvent for same-tab sync (replaces 100ms polling)
+      window.dispatchEvent(new CustomEvent('themeChange', { detail: newTheme }));
     } catch (e) {
       // ignore
     }

@@ -1,11 +1,13 @@
 import { verifyToken } from '../utils/jwtUtil.js';
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
+import Group from '../models/Group.js';
 import messageService from '../services/messageService.js';
 import CryptoService from '../services/cryptoService.js';
 import User from '../models/User.js';
 import botService from '../services/botService.js';
 import geminiService from '../services/geminiService.js';
+import groupAIService from '../services/groupAIService.js';
 import transcriptionService from '../services/transcriptionService.js';
 import rateLimiter from '../middleware/socketRateLimiter.js';
 import mongoose from 'mongoose';
@@ -642,6 +644,208 @@ export const configureSocketIO = (io) => {
       }
     });
 
+    // ========== GROUP CHAT EVENTS ==========
+
+    // Join a group room
+    socket.on('group.join', async (data) => {
+      try {
+        const { groupId } = data;
+        const userId = socket.userId;
+
+        const group = await Group.findById(groupId);
+        if (!group) {
+          socket.emit('error', { message: 'Group not found' });
+          return;
+        }
+
+        if (!group.isMember(userId)) {
+          socket.emit('error', { message: 'You are not a member of this group' });
+          return;
+        }
+
+        socket.join(`group:${groupId}`);
+        console.log(`User ${userId} joined group room: ${groupId}`);
+
+        socket.emit('group.joined', { groupId });
+      } catch (error) {
+        console.error('Error handling group.join:', error);
+        socket.emit('error', { message: error.message });
+      }
+    });
+
+    // Leave a group room
+    socket.on('group.leave', (data) => {
+      const { groupId } = data;
+      socket.leave(`group:${groupId}`);
+      console.log(`User ${socket.userId} left group room: ${groupId}`);
+    });
+
+    // Send message to group
+    socket.on('group.send', async (incoming) => {
+      try {
+        const userId = socket.userId;
+        const { groupId, content, type = 'text', replyTo, metadata } = incoming;
+
+        console.log(`[group.send] User ${userId} sending to group ${groupId}:`, content?.substring(0, 50));
+
+        if (!groupId || !content) {
+          console.log(`[group.send] Error: Missing groupId or content`);
+          socket.emit('error', { message: 'Group ID and content are required' });
+          return;
+        }
+
+        // Rate limiting
+        const rateCheck = rateLimiter.checkLimit(userId);
+        if (!rateCheck.allowed) {
+          socket.emit('error:rate_limit', {
+            message: 'Too many messages. Please slow down.',
+            retryAfter: rateCheck.retryAfter
+          });
+          return;
+        }
+
+        // Verify membership
+        const group = await Group.findById(groupId).populate('members', 'username displayName');
+        if (!group) {
+          socket.emit('error', { message: 'Group not found' });
+          return;
+        }
+
+        if (!group.isMember(userId)) {
+          socket.emit('error', { message: 'You are not a member of this group' });
+          return;
+        }
+
+        // Check if only admins can post
+        if (group.settings?.onlyAdminsCanPost && !group.isAdmin(userId)) {
+          socket.emit('error', { message: 'Only admins can send messages in this group' });
+          return;
+        }
+
+        // Parse mentions
+        const mentions = groupAIService.parseMentions(content, group.members);
+
+        // Get sender info
+        const sender = await User.findById(userId).select('username displayName avatarUrl');
+
+        // Create message
+        const message = new Message({
+          senderId: userId,
+          senderDisplayName: sender?.displayName || sender?.username,
+          groupId,
+          type,
+          content,
+          mentions,
+          replyTo: replyTo || null,
+          metadata: metadata || null,
+          timestamp: new Date(),
+          delivered: true,
+          deliveredAt: new Date()
+        });
+
+        const saved = await message.save();
+        console.log(`Group message saved: ${saved._id} in group ${groupId}`);
+
+        // Update group's last message
+        group.lastMessageAt = new Date();
+        group.lastMessagePreview = type === 'text'
+          ? content.substring(0, 50) + (content.length > 50 ? '...' : '')
+          : `[${type}]`;
+        await group.save();
+
+        // Create DTO for broadcast
+        const messageDTO = {
+          id: saved._id,
+          senderId: saved.senderId,
+          senderDisplayName: saved.senderDisplayName,
+          senderAvatar: sender?.avatarUrl,
+          groupId: saved.groupId,
+          type: saved.type,
+          content: saved.content,
+          mentions: saved.mentions,
+          replyTo: saved.replyTo,
+          metadata: saved.metadata,
+          timestamp: saved.timestamp,
+          isBot: saved.isBot,
+          deleted: saved.deleted
+        };
+
+        // Broadcast to all group members
+        io.to(`group:${groupId}`).emit('group.message', messageDTO);
+
+        // Handle @AI mentions
+        const hasAIMention = mentions.some(m => m.type === 'ai');
+        if (hasAIMention && group.settings?.aiEnabled !== false) {
+          handleGroupAIMention(io, groupId, content, userId, sender);
+        }
+
+      } catch (error) {
+        console.error('Error handling group.send:', error);
+        socket.emit('error', { message: 'Failed to send message' });
+      }
+    });
+
+    // Group typing indicator
+    socket.on('group.typing', (data) => {
+      try {
+        const { groupId } = data;
+        const userId = socket.userId;
+        const username = socket.username;
+
+        // Broadcast to all group members except sender
+        socket.to(`group:${groupId}`).emit('group.typing', {
+          groupId,
+          userId,
+          username,
+          type: 'typing'
+        });
+      } catch (error) {
+        console.error('Error handling group.typing:', error);
+      }
+    });
+
+    // Group message delete (by sender or admin)
+    socket.on('group.delete', async (data) => {
+      try {
+        const { groupId, messageId } = data;
+        const userId = socket.userId;
+
+        const group = await Group.findById(groupId);
+        if (!group) {
+          socket.emit('error', { message: 'Group not found' });
+          return;
+        }
+
+        const message = await Message.findOne({ _id: messageId, groupId });
+        if (!message) {
+          socket.emit('error', { message: 'Message not found' });
+          return;
+        }
+
+        // Admins can delete any message, members can only delete their own
+        if (message.senderId !== userId && !group.isAdmin(userId)) {
+          socket.emit('error', { message: 'You can only delete your own messages' });
+          return;
+        }
+
+        message.deleted = true;
+        await message.save();
+
+        // Broadcast deletion to group
+        io.to(`group:${groupId}`).emit('group.message_deleted', {
+          groupId,
+          messageId
+        });
+
+        console.log(`Group message ${messageId} deleted by ${userId}`);
+      } catch (error) {
+        console.error('Error handling group.delete:', error);
+        socket.emit('error', { message: 'Failed to delete message' });
+      }
+    });
+
+    // ========== END GROUP CHAT EVENTS ==========
+
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.userId}`);
 
@@ -736,3 +940,87 @@ async function handleBotMessage(io, socket, incoming, userMessage) {
   }
 }
 
+/**
+ * Handle @AI mentions in group chats
+ * AI responses are public in the group
+ */
+async function handleGroupAIMention(io, groupId, messageContent, senderId, sender) {
+  try {
+    console.log(`Processing @AI mention in group ${groupId}`);
+
+    // Extract query from message
+    const query = groupAIService.extractAIQuery(messageContent);
+
+    // Process the AI query
+    const aiResponse = await groupAIService.handleAIMention(query, groupId, { senderId });
+
+    if (aiResponse.success && aiResponse.response) {
+      // Create AI response message
+      const aiMessage = new Message({
+        senderId: 'ai-assistant',
+        senderDisplayName: 'AI Assistant',
+        groupId,
+        type: 'text',
+        content: aiResponse.response,
+        isBot: true,
+        mentions: [{ type: 'user', userId: senderId, displayName: sender?.displayName }],
+        timestamp: new Date(),
+        delivered: true,
+        deliveredAt: new Date()
+      });
+
+      const savedAIMessage = await aiMessage.save();
+      console.log(`AI response saved: ${savedAIMessage._id}`);
+
+      // Create DTO for broadcast
+      const aiMessageDTO = {
+        id: savedAIMessage._id,
+        senderId: savedAIMessage.senderId,
+        senderDisplayName: savedAIMessage.senderDisplayName,
+        senderAvatar: null, // AI has no avatar
+        groupId: savedAIMessage.groupId,
+        type: savedAIMessage.type,
+        content: savedAIMessage.content,
+        mentions: savedAIMessage.mentions,
+        timestamp: savedAIMessage.timestamp,
+        isBot: true,
+        deleted: false
+      };
+
+      // Broadcast AI response to all group members (public)
+      io.to(`group:${groupId}`).emit('group.message', aiMessageDTO);
+
+      console.log(`AI response broadcast to group ${groupId}`);
+    } else {
+      console.error('AI mention processing failed:', aiResponse.error);
+
+      // Send error response to group
+      const errorMessage = new Message({
+        senderId: 'ai-assistant',
+        senderDisplayName: 'AI Assistant',
+        groupId,
+        type: 'text',
+        content: aiResponse.response || "Sorry, I couldn't process that request.",
+        isBot: true,
+        timestamp: new Date()
+      });
+
+      const saved = await errorMessage.save();
+      const errorDTO = {
+        id: saved._id,
+        senderId: saved.senderId,
+        senderDisplayName: saved.senderDisplayName,
+        groupId: saved.groupId,
+        type: saved.type,
+        content: saved.content,
+        timestamp: saved.timestamp,
+        isBot: true,
+        deleted: false
+      };
+
+      io.to(`group:${groupId}`).emit('group.message', errorDTO);
+    }
+  } catch (error) {
+    console.error('Error in handleGroupAIMention:', error);
+  }
+}

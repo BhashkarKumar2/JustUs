@@ -292,6 +292,7 @@ const MessageItem = React.memo(({
     </div>
   );
 });
+MessageItem.displayName = 'MessageItem';
 
 export default function ChatMessages({ messages, user, otherUser, onEdit, onDelete, onReply, onForward, colors, theme, onOpenLightbox }) {
   const [showOriginalMap, setShowOriginalMap] = useState({});

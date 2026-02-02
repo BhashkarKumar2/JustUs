@@ -17,35 +17,43 @@ jest.mock('../services/wallpaperService', () => ({
 }));
 
 // Mock Child Components to simplify testing (Integration Test level)
-jest.mock('../components/chat/layout/ChatMessages', () => ({ onForward }) => (
-    <div data-testid="chat-messages">
-        <button
-            data-testid="trigger-forward"
-            onClick={() => onForward({ id: 'msg-1', content: 'Hello', type: 'text' })}
-        >
-            Forward Msg 1
-        </button>
-    </div>
-));
-
-jest.mock('../components/modals/UserSelectModal', () => ({ show, onSelect, onClose }) => {
-    if (!show) return null;
-    return (
-        <div data-testid="user-select-modal">
-            <button data-testid="select-user-2" onClick={() => onSelect('user-2')}>Select User 2</button>
-            <button onClick={onClose}>Close</button>
+jest.mock('../components/chat/layout/ChatMessages', () => {
+    const MockChatMessages = ({ onForward }) => (
+        <div data-testid="chat-messages">
+            <button
+                data-testid="trigger-forward"
+                onClick={() => onForward({ id: 'msg-1', content: 'Hello', type: 'text' })}
+            >
+                Forward Msg 1
+            </button>
         </div>
     );
+    MockChatMessages.displayName = 'MockChatMessages';
+    return MockChatMessages;
 });
 
-jest.mock('../components/chat/layout/ChatHeader', () => () => <div>ChatHeader</div>);
-jest.mock('../components/chat/input/ComposeBar', () => () => <div>ComposeBar</div>);
-jest.mock('../components/chat/layout/TypingIndicator', () => () => null);
-jest.mock('../components/chat/layout/ScrollToBottomButton', () => () => null);
-jest.mock('../components/modals/VoiceCallModal', () => () => null);
-jest.mock('../components/modals/VideoCallModal', () => () => null);
-jest.mock('../components/modals/SmartSearch', () => () => null);
-jest.mock('../components/chat/layout/WallpaperPanel', () => () => null);
+jest.mock('../components/modals/UserSelectModal', () => {
+    const MockUserSelectModal = ({ show, onSelect, onClose }) => {
+        if (!show) return null;
+        return (
+            <div data-testid="user-select-modal">
+                <button data-testid="select-user-2" onClick={() => onSelect('user-2')}>Select User 2</button>
+                <button onClick={onClose}>Close</button>
+            </div>
+        );
+    };
+    MockUserSelectModal.displayName = 'MockUserSelectModal';
+    return MockUserSelectModal;
+});
+
+jest.mock('../components/chat/layout/ChatHeader', () => Object.assign(() => <div>ChatHeader</div>, { displayName: 'MockChatHeader' }));
+jest.mock('../components/chat/input/ComposeBar', () => Object.assign(() => <div>ComposeBar</div>, { displayName: 'MockComposeBar' }));
+jest.mock('../components/chat/layout/TypingIndicator', () => Object.assign(() => null, { displayName: 'MockTypingIndicator' }));
+jest.mock('../components/chat/layout/ScrollToBottomButton', () => Object.assign(() => null, { displayName: 'MockScrollToBottomButton' }));
+jest.mock('../components/modals/VoiceCallModal', () => Object.assign(() => null, { displayName: 'MockVoiceCallModal' }));
+jest.mock('../components/modals/VideoCallModal', () => Object.assign(() => null, { displayName: 'MockVideoCallModal' }));
+jest.mock('../components/modals/SmartSearch', () => Object.assign(() => null, { displayName: 'MockSmartSearch' }));
+jest.mock('../components/chat/layout/WallpaperPanel', () => Object.assign(() => null, { displayName: 'MockWallpaperPanel' }));
 
 // Mock Hooks
 const mockSetMessages = jest.fn();
