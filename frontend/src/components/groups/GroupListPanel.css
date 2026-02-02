@@ -41,7 +41,7 @@
 }
 
 .group-search-input:focus {
-    border-color: #667eea;
+    border-color: var(--primary-gradient-start);
 }
 
 .group-search-input::placeholder {
@@ -56,7 +56,7 @@
     height: 36px;
     border: none;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: var(--primary-gradient);
     color: white;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -99,7 +99,7 @@
     padding: 10px 20px;
     border: none;
     border-radius: 20px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: var(--primary-gradient);
     color: white;
     cursor: pointer;
     font-weight: 500;
@@ -148,7 +148,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: var(--primary-gradient);
     color: white;
     font-size: 1.2rem;
     font-weight: 600;

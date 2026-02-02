@@ -1,5 +1,6 @@
 import React from 'react';
 import './GroupHeader.css';
+import { getAuthenticatedMediaUrl } from '../../utils/mediaLoader';
 
 /**
  * GroupHeader - Header for group chat page
@@ -18,7 +19,11 @@ const GroupHeader = ({ group, onBack, onInfoClick }) => {
             <div className="group-header-info" onClick={onInfoClick}>
                 <div className="group-header-avatar">
                     {group.avatarUrl ? (
-                        <img src={group.avatarUrl} alt={group.name} />
+                        <img
+                            src={getAuthenticatedMediaUrl(group.avatarUrl)}
+                            alt={group.name}
+                            onError={(e) => console.error('[GroupHeader] Avatar load error', e)}
+                        />
                     ) : (
                         <div className="avatar-placeholder">
                             {group.name.charAt(0).toUpperCase()}

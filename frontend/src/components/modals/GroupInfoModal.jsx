@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { toast } from 'react-hot-toast';
+import { getAuthenticatedApi } from '../../services/api';
+import { getAuthenticatedMediaUrl } from '../../utils/mediaLoader';
 import * as groupService from '../../services/groupService';
 import './GroupInfoModal.css';
 
@@ -8,9 +11,24 @@ import './GroupInfoModal.css';
 const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [uploading, setUploading] = useState(false);
     const [showInviteCode, setShowInviteCode] = useState(false);
+    const fileInputRef = useRef(null);
+
+    // Debug logging
+    console.log('[GroupInfoModal] Rendering for group:', group ? { id: group.id || group._id, name: group.name, avatarUrl: group.avatarUrl } : 'null');
+    if (group?.avatarUrl) {
+        console.log('[GroupInfoModal] Authenticated Avatar URL:', getAuthenticatedMediaUrl(group.avatarUrl));
+    }
 
     if (!group) return null;
+
+    // Safe ID access
+    const groupId = group.id || group._id;
+    if (!groupId) {
+        console.error('GroupInfoModal: Invalid group object', group);
+        return null; // Or show error
+    }
 
     const isAdmin = group.isAdmin || group.admins?.some(a =>
         (a._id || a) === user?.id || (a._id || a).toString() === user?.id
@@ -22,7 +40,7 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
 
         setLoading(true);
         try {
-            await groupService.leaveGroup(group.id);
+            await groupService.leaveGroup(groupId);
             onClose();
             // Optionally trigger a refresh of the group list
             window.location.reload();
@@ -38,7 +56,7 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
 
         setLoading(true);
         try {
-            await groupService.deleteGroup(group.id);
+            await groupService.deleteGroup(groupId);
             onClose();
             window.location.reload();
         } catch (err) {
@@ -52,7 +70,7 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
         if (!window.confirm('Remove this member from the group?')) return;
 
         try {
-            await groupService.removeMember(group.id, memberId);
+            await groupService.removeMember(groupId, memberId);
             onGroupUpdated({
                 ...group,
                 members: group.members.filter(m => (m._id || m) !== memberId)
@@ -62,9 +80,55 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
         }
     };
 
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please select an image file');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image must be smaller than 5MB');
+            return;
+        }
+
+        handleAvatarUpload(file);
+    };
+
+    const handleAvatarUpload = async (file) => {
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('groupId', groupId); // Associate with group - MUST BE BEFORE FILE
+            formData.append('file', file);
+
+            const api = getAuthenticatedApi();
+            const uploadRes = await api.post('/api/media/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            const newAvatarUrl = `/api/media/file/${uploadRes.data.id}`;
+
+            // Update group with new avatar
+            const updatedGroup = await groupService.updateGroup(groupId, { avatarUrl: newAvatarUrl });
+
+            onGroupUpdated(updatedGroup.group || updatedGroup);
+            toast.success('Group icon updated!');
+        } catch (err) {
+            console.error('Failed to upload group avatar:', err);
+            toast.error('Failed to update group icon');
+        } finally {
+            setUploading(false);
+            // Clear input
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
     const handlePromoteAdmin = async (memberId) => {
         try {
-            await groupService.promoteToAdmin(group.id, memberId);
+            await groupService.promoteToAdmin(groupId, memberId);
             onGroupUpdated({
                 ...group,
                 admins: [...(group.admins || []), memberId]
@@ -103,13 +167,40 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
                 <div className="modal-content">
                     {/* Group Info Section */}
                     <div className="group-profile">
-                        <div className="group-avatar-large">
+                        <div className="group-avatar-large" style={{ position: 'relative' }}>
                             {group.avatarUrl ? (
-                                <img src={group.avatarUrl} alt={group.name} />
+                                <img
+                                    src={getAuthenticatedMediaUrl(group.avatarUrl)}
+                                    alt={group.name}
+                                    onError={(e) => {
+                                        console.error('Avatar load error:', e);
+                                        console.log('Failed URL was:', getAuthenticatedMediaUrl(group.avatarUrl));
+                                    }}
+                                />
                             ) : (
                                 <div className="avatar-placeholder">
                                     {group.name.charAt(0).toUpperCase()}
                                 </div>
+                            )}
+
+                            {isAdmin && (
+                                <>
+                                    <button
+                                        className="avatar-edit-overlay"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={uploading}
+                                        title="Change Group Icon"
+                                    >
+                                        {uploading ? '...' : '📷'}
+                                    </button>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileSelect}
+                                        style={{ display: 'none' }}
+                                    />
+                                </>
                             )}
                         </div>
                         <h3>{group.name}</h3>

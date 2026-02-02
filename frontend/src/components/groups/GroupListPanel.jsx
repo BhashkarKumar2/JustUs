@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as groupService from '../../services/groupService';
+import { getAuthenticatedMediaUrl } from '../../utils/mediaLoader';
 import './GroupListPanel.css';
 
 /**
@@ -116,7 +117,11 @@ const GroupListPanel = ({ user, onSelectGroup, selectedGroupId, onCreateGroup })
                         >
                             <div className="group-avatar">
                                 {group.avatarUrl ? (
-                                    <img src={group.avatarUrl} alt={group.name} />
+                                    <img
+                                        src={getAuthenticatedMediaUrl(group.avatarUrl)}
+                                        alt={group.name}
+                                        onError={(e) => console.error('[GroupListPanel] Avatar load error for', group.name, e)}
+                                    />
                                 ) : (
                                     <div className="group-avatar-placeholder">
                                         {group.name.charAt(0).toUpperCase()}

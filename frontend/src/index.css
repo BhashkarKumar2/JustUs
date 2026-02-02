@@ -27,6 +27,19 @@ button:focus {
 /* Responsive scale: subtly reduce overall size on larger screens */
 :root {
   font-size: 16px;
+
+  /* Theme Variables */
+  --primary-gradient-start: #667eea;
+  --primary-gradient-end: #764ba2;
+  --primary-gradient: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+}
+
+body.dark {
+  /* Gray/Monochrome Theme for Dark Mode */
+  --primary-gradient-start: #6b7280;
+  /* Gray-500 */
+  --primary-gradient-end: #4b5563;
+  /* Gray-600 */
 }
 
 @media (min-width: 1024px) {
@@ -74,6 +87,7 @@ button:focus {
     opacity: 0;
     transform: translate3d(0, 10px, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -85,6 +99,7 @@ button:focus {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);

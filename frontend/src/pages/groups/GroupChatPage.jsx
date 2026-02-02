@@ -4,6 +4,7 @@ import { useGroupMessages } from '../../hooks/useGroupMessages';
 import * as groupService from '../../services/groupService';
 import GroupHeader from '../../components/groups/GroupHeader';
 import GroupInfoModal from '../../components/modals/GroupInfoModal';
+import Lightbox from '../../components/chat/layout/Lightbox';
 import MentionPicker from '../../components/groups/MentionPicker'; // Still used for display names logic but picker is now inside logic
 import './GroupChatPage.css';
 import ComposeBar from '../../components/chat/input/ComposeBar';
@@ -11,6 +12,7 @@ import useImageUpload from '../../hooks/useImageUpload';
 import useMessageSender from '../../hooks/useMessageSender'; // For sound effects/text logic if needed
 import { getSocket } from '../../services/socket';
 import { toast } from 'react-hot-toast';
+import { getAuthenticatedMediaUrl } from '../../utils/mediaLoader';
 
 /**
  * GroupChatPage - Main group chat interface
@@ -21,6 +23,7 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
     const [error, setError] = useState(null);
     const [inputState, setInputState] = useState(''); // Synced with ComposeBar
     const [showGroupInfo, setShowGroupInfo] = useState(false);
+    const [lightbox, setLightbox] = useState({ visible: false, url: null, type: null, filename: null });
 
     // We don't need manual mention state here as we might rely on ComposeBar features or keep it simple for now.
     // However, ComposeBar doesn't natively have mention logical for groups yet, so we pass down what's needed.
@@ -160,24 +163,59 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
 
         // Handle temp/local vs remote URLs
         // Note: For real chat attachments, usually the content IS the URL
+        const getContentUrl = (url) => {
+            if (!url) return '';
+            // If it's a blob URL (local preview), use as is
+            if (url.startsWith('blob:')) return url;
+            // Otherwise, get authenticated URL
+            return getAuthenticatedMediaUrl(url);
+        };
+
         if (isImage) {
             return (
                 <div className="message-attachment image">
-                    <img src={message.content} alt="Attachment" style={{ maxWidth: '200px', borderRadius: '8px' }} />
+                    <img
+                        src={getContentUrl(message.content)}
+                        alt="Attachment"
+                        style={{ maxWidth: '200px', borderRadius: '8px', cursor: 'pointer' }}
+                        onClick={() => setLightbox({
+                            visible: true,
+                            url: getContentUrl(message.content),
+                            type: 'image',
+                            filename: message.metadata?.filename
+                        })}
+                        onError={(e) => {
+                            console.error('GroupChat image load error', e);
+                            e.target.style.display = 'none';
+                        }}
+                    />
                 </div>
             );
         }
         if (isVideo) {
             return (
                 <div className="message-attachment video">
-                    <video src={message.content} controls style={{ maxWidth: '200px', borderRadius: '8px' }} />
+                    <video
+                        src={getContentUrl(message.content)}
+                        controls
+                        style={{ maxWidth: '200px', borderRadius: '8px', cursor: 'pointer' }}
+                        onClick={(e) => {
+                            e.preventDefault(); // Prevent default play if we want lightbox
+                            setLightbox({
+                                visible: true,
+                                url: getContentUrl(message.content),
+                                type: 'video',
+                                filename: message.metadata?.filename
+                            });
+                        }}
+                    />
                 </div>
             );
         }
         if (isDoc) {
             return (
                 <div className="message-attachment doc">
-                    <a href={message.content} target="_blank" rel="noopener noreferrer">📄 {message.metadata?.filename || 'Document'}</a>
+                    <a href={getContentUrl(message.content)} target="_blank" rel="noopener noreferrer">📄 {message.metadata?.filename || 'Document'}</a>
                 </div>
             );
         }
@@ -290,6 +328,15 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
                     user={user}
                     onClose={() => setShowGroupInfo(false)}
                     onGroupUpdated={setGroup}
+                />
+            )}
+
+            {lightbox.visible && (
+                <Lightbox
+                    url={lightbox.url}
+                    type={lightbox.type}
+                    filename={lightbox.filename}
+                    onClose={() => setLightbox({ visible: false, url: null, type: null, filename: null })}
                 />
             )}
         </div>

@@ -4,6 +4,9 @@ import { GridFsStorage } from 'multer-gridfs-storage';
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
 
+import Group from '../models/Group.js';
+import User from '../models/User.js';
+
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/justus';
 
 // Create GridFS storage that reuses the existing connection
@@ -16,7 +19,8 @@ const storage = new GridFsStorage({
       filename: file.originalname,
       bucketName: 'fs',
       metadata: {
-        conversationId: req.body.conversationId || req.query.conversationId
+        conversationId: req.body.conversationId || req.query.conversationId,
+        groupId: req.body.groupId || req.query.groupId
       }
     };
   }
@@ -39,6 +43,7 @@ export const uploadFile = (req, res) => {
     console.log('Filename:', req.file.filename);
     console.log('ContentType:', req.file.contentType);
     console.log('ConversationId:', req.body.conversationId || req.query.conversationId);
+    console.log('GroupId:', req.body.groupId || req.query.groupId);
     console.log('Database:', mongoose.connection.db.databaseName);
     console.log('===========================');
 
@@ -87,30 +92,60 @@ export const getFile = async (req, res) => {
     }
 
     // Check conversation membership if metadata present
-    if (file.metadata && file.metadata.conversationId) {
-      const convId = file.metadata.conversationId;
-      console.log('MediaController: File belongs to conversation:', convId);
+    if (file.metadata && (file.metadata.conversationId || file.metadata.groupId)) {
 
-      const conversation = await Conversation.findById(convId);
-      console.log('MediaController: Current user ID:', req.userId);
+      // Case 1: Group Chat File
+      if (file.metadata.groupId) {
+        const groupId = file.metadata.groupId;
+        console.log('MediaController: File belongs to group:', groupId);
 
-      if (!conversation) {
-        console.log('MediaController: Conversation not found:', convId);
-        return res.status(403).json({ message: 'Access denied' });
+        try {
+          const group = await Group.findById(groupId);
+
+          if (!group) {
+            console.log('MediaController: Group not found:', groupId);
+            return res.status(404).json({ message: 'Group not found' });
+          }
+
+          const isMember = group.isMember(req.userId);
+          if (!isMember) {
+            console.log('MediaController: User', req.userId, 'is not a member of group', groupId);
+            return res.status(403).json({ message: 'Access denied' });
+          }
+
+          console.log('MediaController: Group access granted for user', req.userId, 'to file', id);
+        } catch (err) {
+          console.error('MediaController: Group check error', err);
+          return res.status(500).json({ message: 'Server error checking permissions' });
+        }
+
       }
+      // Case 2: Direct Conversation File
+      else if (file.metadata.conversationId) {
+        const convId = file.metadata.conversationId;
+        console.log('MediaController: File belongs to conversation:', convId);
 
-      console.log('MediaController: Conversation participants:', conversation.participantA, ',', conversation.participantB);
+        const conversation = await Conversation.findById(convId);
+        console.log('MediaController: Current user ID:', req.userId);
 
-      if (req.userId !== conversation.participantA && req.userId !== conversation.participantB) {
-        console.log('MediaController: User', req.userId, 'is not a participant in conversation', convId);
-        return res.status(403).json({ message: 'Access denied' });
+        if (!conversation) {
+          console.log('MediaController: Conversation not found:', convId);
+          return res.status(403).json({ message: 'Access denied' });
+        }
+
+        console.log('MediaController: Conversation participants:', conversation.participantA, ',', conversation.participantB);
+
+        if (req.userId !== conversation.participantA && req.userId !== conversation.participantB) {
+          console.log('MediaController: User', req.userId, 'is not a participant in conversation', convId);
+          return res.status(403).json({ message: 'Access denied' });
+        }
+
+        console.log('MediaController: Access granted for user', req.userId, 'to file', id);
       }
-
-      console.log('MediaController: Access granted for user', req.userId, 'to file', id);
     } else {
       // Fallback: Check if this file is used in a message that the user has access to
       // This handles legacy files uploaded before metadata was mandatory
-      console.log(`[SECURITY] File ${id} has no conversationId metadata - checking Message usage`);
+      console.log(`[SECURITY] File ${id} has no valid metadata - checking Message usage`);
 
       const Message = mongoose.model('Message');
       // Find a message that contains this file ID in its content
@@ -121,19 +156,60 @@ export const getFile = async (req, res) => {
 
       if (message) {
         console.log(`[SECURITY] Found message ${message._id} referencing file ${id}`);
-        const conversation = await Conversation.findById(message.conversationId);
 
-        if (conversation && (conversation.participantA === req.userId || conversation.participantB === req.userId)) {
-          console.log(`[SECURITY] Access granted via Message reference in conversation ${conversation._id}`);
-          // Access granted - proceed to stream
+        if (message.groupId) {
+          // Check group access
+          const group = await Group.findById(message.groupId);
+          if (group && group.isMember(req.userId)) {
+            console.log(`[SECURITY] Access granted via Group Message reference in group ${group._id}`);
+          } else {
+            console.log(`[SECURITY] User ${req.userId} is not a member of group ${message.groupId}`);
+            return res.status(403).json({ message: 'Access denied' });
+          }
+        } else if (message.conversationId) {
+          const conversation = await Conversation.findById(message.conversationId);
+
+          if (conversation && (conversation.participantA === req.userId || conversation.participantB === req.userId)) {
+            console.log(`[SECURITY] Access granted via Message reference in conversation ${conversation._id}`);
+            // Access granted - proceed to stream
+          } else {
+            console.log(`[SECURITY] User ${req.userId} is not part of conversation ${message.conversationId}`);
+            return res.status(403).json({ message: 'Access denied' });
+          }
         } else {
-          console.log(`[SECURITY] User ${req.userId} is not part of conversation ${message.conversationId}`);
+          // Orphaned message type?
+          console.log(`[SECURITY] Message ${message._id} has neither groupId nor conversationId`);
           return res.status(403).json({ message: 'Access denied' });
         }
       } else {
-        // SECURITY: Deny access to files without conversation metadata and no message reference
-        console.log(`[SECURITY] File ${id} is orphaned (no metadata, no message ref) - denying access`);
-        return res.status(403).json({ message: 'Access denied: File not associated with a conversation' });
+        // Check if it is a Group Avatar (for legacy files without metadata)
+        console.log(`[SECURITY] Checking if file ${id} is a Group Avatar`);
+        const groupAvatar = await Group.findOne({ avatarUrl: { $regex: id } });
+
+        if (groupAvatar) {
+          console.log(`[SECURITY] File ${id} is avatar for group ${groupAvatar._id}`);
+          if (groupAvatar.isMember(req.userId)) {
+            console.log(`[SECURITY] Access granted via Group Avatar reference`);
+            // Access granted
+          } else {
+            console.log(`[SECURITY] User ${req.userId} is not member of group ${groupAvatar._id}`);
+            return res.status(403).json({ message: 'Access denied' });
+          }
+        }
+        else {
+          // Check if it is a User Avatar
+          console.log(`[SECURITY] Checking if file ${id} is a User Avatar`);
+          const userAvatar = await User.findOne({ avatarUrl: { $regex: id } });
+
+          if (userAvatar) {
+            console.log(`[SECURITY] File ${id} is avatar for user ${userAvatar._id}`);
+            // User avatars are generally visible to authenticated users
+            console.log(`[SECURITY] Access granted via User Avatar reference`);
+          } else {
+            console.log(`[SECURITY] File ${id} is orphaned (no metadata, no message ref, no avatar ref) - denying access`);
+            return res.status(403).json({ message: 'Access denied: File not associated with a contextual source' });
+          }
+        }
       }
     }
 

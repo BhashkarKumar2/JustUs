@@ -19,7 +19,7 @@
     padding: 10px 20px;
     border: none;
     border-radius: 8px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: var(--primary-gradient);
     color: white;
     cursor: pointer;
 }
@@ -64,7 +64,7 @@
 
 .message-bubble.sent {
     align-self: flex-end;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: var(--primary-gradient);
     color: white;
     border-bottom-right-radius: 4px;
 }
@@ -91,7 +91,7 @@
 .message-sender {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #667eea;
+    color: var(--primary-gradient-start);
     margin-bottom: 4px;
 }
 
@@ -146,7 +146,7 @@
 }
 
 .message-input:focus {
-    border-color: #667eea;
+    border-color: var(--primary-gradient-start);
 }
 
 .message-input::placeholder {
@@ -161,7 +161,7 @@
     height: 48px;
     border: none;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: var(--primary-gradient);
     color: white;
     cursor: pointer;
     transition: transform 0.2s, opacity 0.2s;
@@ -202,7 +202,7 @@ body.dark .message-bubble.received {
 }
 
 body.dark .message-sender {
-    color: #667eea;
+    color: var(--primary-gradient-start);
 }
 
 body.dark .typing-indicator {
