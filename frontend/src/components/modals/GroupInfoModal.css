@@ -359,7 +359,13 @@ body.dark .invite-code-section {
 }
 
 body.dark .invite-code code {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: #e5e7eb;
+}
+
+body.dark .invite-code button {
+    background: #e5e7eb;
+    color: #1f2937;
 }
 
 body.dark .members-list {
@@ -380,6 +386,11 @@ body.dark .member-username {
 
 body.dark .badge.creator {
     color: #ffd700;
+}
+
+body.dark .badge.admin {
+    background: rgba(255, 255, 255, 0.2);
+    color: #e5e7eb;
 }
 
 body.dark .modal-actions {

@@ -143,12 +143,12 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
     localStorage.setItem('hasSeenTour_v2', 'true');
   };
 
-  // Theme effect
+  // Theme effect - Managed globally by App.jsx, but we ensure body class is correct just in case
   useEffect(() => {
     if (theme === 'dark') {
-      document.documentElement.classList.add('dark-theme');
+      document.body.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark-theme');
+      document.body.classList.remove('dark');
     }
   }, [theme]);
 
@@ -425,13 +425,13 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
               padding: '12px 16px',
               border: 'none',
               background: activeTab === 'chats'
-                ? (darkMode ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.2)')
+                ? (darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)')
                 : 'transparent',
-              color: activeTab === 'chats' ? '#667eea' : (darkMode ? '#888' : '#666'),
+              color: activeTab === 'chats' ? (darkMode ? '#e5e7eb' : '#667eea') : (darkMode ? '#888' : '#666'),
               fontWeight: activeTab === 'chats' ? '600' : '400',
               cursor: 'pointer',
               transition: 'all 0.2s',
-              borderBottom: activeTab === 'chats' ? '2px solid #667eea' : '2px solid transparent'
+              borderBottom: activeTab === 'chats' ? (darkMode ? '2px solid #e5e7eb' : '2px solid #667eea') : '2px solid transparent'
             }}
           >
             💬 Chats
@@ -443,13 +443,13 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
               padding: '12px 16px',
               border: 'none',
               background: activeTab === 'groups'
-                ? (darkMode ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.2)')
+                ? (darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)')
                 : 'transparent',
-              color: activeTab === 'groups' ? '#667eea' : (darkMode ? '#888' : '#666'),
+              color: activeTab === 'groups' ? (darkMode ? '#e5e7eb' : '#667eea') : (darkMode ? '#888' : '#666'),
               fontWeight: activeTab === 'groups' ? '600' : '400',
               cursor: 'pointer',
               transition: 'all 0.2s',
-              borderBottom: activeTab === 'groups' ? '2px solid #667eea' : '2px solid transparent'
+              borderBottom: activeTab === 'groups' ? (darkMode ? '2px solid #e5e7eb' : '2px solid #667eea') : '2px solid transparent'
             }}
           >
             👥 Groups

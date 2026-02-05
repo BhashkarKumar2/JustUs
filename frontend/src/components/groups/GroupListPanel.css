@@ -239,11 +239,11 @@ body.dark .group-list-empty {
 }
 
 body.dark .group-list-item:hover {
-    background: rgba(102, 126, 234, 0.25);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 body.dark .group-list-item.selected {
-    background: rgba(102, 126, 234, 0.2);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 body.dark .group-name {

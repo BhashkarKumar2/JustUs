@@ -352,11 +352,30 @@ export default function MessageItem({ me, m, onEdit, onDelete, onContextMenu }) 
                 )}
 
                 {m.type && !['text', 'image', 'audio'].includes(m.type) && (
-                  <div className={`text-sm flex items-center space-x-2 ${mine ? 'text-indigo-200' : 'text-gray-600'}`}>
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                    </svg>
-                    <span className="font-medium">{m.type} attachment</span>
+                  <div className={`mt-1 p-3 rounded-2xl flex items-center gap-3 ${mine ? 'bg-white/20' : 'bg-gray-100 border border-gray-200'}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${mine ? 'bg-white/20' : 'bg-indigo-100 text-indigo-500'}`}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-medium truncate ${mine ? 'text-white' : 'text-gray-900'}`}>
+                        {m.metadata?.filename || 'Attached File'}
+                      </div>
+                      <div className={`text-xs ${mine ? 'text-white/70' : 'text-gray-500'}`}>
+                        {m.metadata?.size ? `${(m.metadata.size / 1024).toFixed(1)} KB • ` : ''}
+                        {m.type.toUpperCase()}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => window.open(getAuthenticatedMediaUrl(m.content), '_blank')}
+                      className={`p-2 rounded-full hover:bg-black/10 transition-colors ${mine ? 'text-white' : 'text-gray-500'}`}
+                      title="Download"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </button>
                   </div>
                 )}
               </>

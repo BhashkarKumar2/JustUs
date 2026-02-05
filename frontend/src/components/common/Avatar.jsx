@@ -1,4 +1,5 @@
 import React from 'react';
+import { getAuthenticatedMediaUrl } from '../../utils/mediaLoader';
 
 export default function Avatar({ user, size = 40, className = '' }) {
   // Use initials if no avatar image
@@ -13,7 +14,7 @@ export default function Avatar({ user, size = 40, className = '' }) {
     >
       {user.avatarUrl ? (
         <img
-          src={user.avatarUrl}
+          src={getAuthenticatedMediaUrl(user.avatarUrl)}
           alt={user.displayName || user.username}
           className="rounded-full w-full h-full object-cover"
         />

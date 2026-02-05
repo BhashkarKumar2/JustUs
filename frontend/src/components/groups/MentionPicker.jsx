@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './MentionPicker.css';
+import Avatar from '../common/Avatar';
 
 /**
  * MentionPicker - Dropdown for selecting @mentions
@@ -99,11 +100,7 @@ const MentionPicker = ({ members, onSelect, onClose, filterText, position }) => 
                         ) : (
                             <>
                                 <div className="mention-avatar">
-                                    {option.avatarUrl ? (
-                                        <img src={option.avatarUrl} alt="" />
-                                    ) : (
-                                        <span>{(option.displayName || option.username || '?').charAt(0).toUpperCase()}</span>
-                                    )}
+                                    <Avatar user={option} size={36} />
                                 </div>
                                 <div className="mention-info">
                                     <div className="mention-name">{option.displayName || option.username}</div>

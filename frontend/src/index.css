@@ -40,6 +40,7 @@ body.dark {
   /* Gray-500 */
   --primary-gradient-end: #4b5563;
   /* Gray-600 */
+  --primary-gradient: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
 }
 
 @media (min-width: 1024px) {

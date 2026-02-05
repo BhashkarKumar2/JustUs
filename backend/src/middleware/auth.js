@@ -38,6 +38,14 @@ export const authenticateJWT = (req, res, next) => {
     }
   }
 
+  // Fallback: Try to get token from query parameter (for image loading)
+  if (!token && req.query.token) {
+    token = req.query.token;
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Token found in query parameter');
+    }
+  }
+
   if (token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);

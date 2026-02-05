@@ -178,7 +178,7 @@
 
 /* Dark Mode Overrides */
 body.dark .group-chat-page {
-    background: rgba(15, 15, 26, 0.8);
+    background: #111827;
 }
 
 body.dark .group-chat-page.loading,
@@ -186,10 +186,6 @@ body.dark .group-chat-page.error {
     color: #888;
 }
 
-body.dark .load-more-btn {
-    border-color: rgba(255, 255, 255, 0.1);
-    color: #888;
-}
 
 body.dark .load-more-btn:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.05);
@@ -199,6 +195,12 @@ body.dark .message-bubble.received {
     background: rgba(31, 41, 55, 0.8);
     color: #e5e7eb;
     box-shadow: none;
+}
+
+body.dark .message-bubble.sent {
+    background: linear-gradient(135deg, #4b5563, #374151) !important;
+    color: #f3f4f6;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 body.dark .message-sender {

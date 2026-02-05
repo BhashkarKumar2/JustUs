@@ -24,10 +24,44 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
     const [inputState, setInputState] = useState(''); // Synced with ComposeBar
     const [showGroupInfo, setShowGroupInfo] = useState(false);
     const [lightbox, setLightbox] = useState({ visible: false, url: null, type: null, filename: null });
+    const [mentionState, setMentionState] = useState({ visible: false, filter: '', position: { bottom: '80px' } });
 
-    // We don't need manual mention state here as we might rely on ComposeBar features or keep it simple for now.
-    // However, ComposeBar doesn't natively have mention logical for groups yet, so we pass down what's needed.
-    // But wait, ComposeBar is generic.
+    // Handle input change to detect mentions based on cursor position or text content
+    const handleInputChange = (newText) => {
+        setInputState(newText);
+
+        // Check if the last word is a mention trigger
+        // We can improve this by using cursor position if available, but for now simple text analysis
+        // Find the last word being typed
+        const words = newText.split(/(\s+)/); // Split by whitespace but keep delimiters to reconstruct if needed
+        const lastWord = words[words.length - 1];
+
+        if (lastWord && lastWord.startsWith('@')) {
+            setMentionState({
+                visible: true,
+                filter: lastWord.substring(1), // Remove @
+                position: { bottom: '80px' }
+            });
+        } else {
+            if (mentionState.visible) {
+                setMentionState(prev => ({ ...prev, visible: false }));
+            }
+        }
+    };
+
+    const handleMentionSelect = (user) => {
+        // Replace the last @mention with the selected username
+        const words = inputState.split(' ');
+        words.pop(); // Remove the partial mention
+        // Use username if available, fallback to displayName (sanitized)
+        const mentionName = user.username || user.displayName.replace(/\s+/g, '');
+        const newText = [...words, `@${mentionName} `].join(' ');
+
+        setInputState(newText);
+        setMentionState(prev => ({ ...prev, visible: false }));
+
+        // Return focus to input (handled by ComposeBar effect usually, but good to note)
+    };
 
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null); // For debounced typing indicator
@@ -160,6 +194,7 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
         const isImage = message.type === 'image';
         const isVideo = message.type === 'video';
         const isDoc = message.type === 'document' || message.type === 'pdf';
+        const isFile = message.type === 'file' || (!isImage && !isVideo && !isDoc);
 
         // Handle temp/local vs remote URLs
         // Note: For real chat attachments, usually the content IS the URL
@@ -216,14 +251,23 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
                 </div>
             );
         }
-        if (isDoc) {
+        if (isDoc || isFile) {
+            console.log('RenderAttachment: FILE/DOC', message.type, message.metadata);
             return (
                 <div className="message-attachment doc">
-                    <a href={getContentUrl(message.content)} target="_blank" rel="noopener noreferrer">📄 {message.metadata?.filename || 'Document'}</a>
+                    <a href={getContentUrl(message.content)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition" onClick={(e) => e.stopPropagation()}>
+                        <span className="text-2xl">📄</span>
+                        <div className="flex flex-col">
+                            <span className="font-medium text-gray-800 dark:text-gray-200 truncate max-w-[200px]">{message.metadata?.filename || 'Attached File'}</span>
+                            {message.metadata?.size && <span className="text-xs text-gray-500">{(message.metadata.size / 1024).toFixed(1)} KB</span>}
+                        </div>
+                    </a>
                 </div>
             );
         }
-        return null; // Unknown type
+
+        console.warn('RenderAttachment: UNKNOWN TYPE', message.type);
+        return <div className="p-2 bg-red-100 text-red-500 text-xs rounded">Unknown: {message.type}</div>;
     };
 
 
@@ -305,9 +349,20 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
                 <div ref={messagesEndRef} />
             </div>
 
+            {/* Mention Picker */}
+            {mentionState.visible && group && (
+                <MentionPicker
+                    members={group.members || []}
+                    filterText={mentionState.filter}
+                    onSelect={handleMentionSelect}
+                    onClose={() => setMentionState(prev => ({ ...prev, visible: false }))}
+                    position={mentionState.position}
+                />
+            )}
+
             <ComposeBar
                 text={inputState}
-                setText={setInputState}
+                setText={handleInputChange}
                 onTyping={onTyping}
                 // Group specific props
                 uploading={uploading}

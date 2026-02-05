@@ -10,7 +10,7 @@ export default function useImageUpload({ userId, otherUserId, conversationId, gr
   const selectFile = (onFileSelected) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*,application/pdf,video/*';
+    input.accept = '*/*'; // Allow all file types
     input.onchange = (e) => {
       const file = e.target.files[0];
       if (file && onFileSelected) {
@@ -26,19 +26,19 @@ export default function useImageUpload({ userId, otherUserId, conversationId, gr
     const isPdf = file.type === 'application/pdf';
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
-
-    if (!isPdf && !isImage && !isVideo) {
-      toast.error('Please select an image, video, or PDF file');
-      return;
-    }
+    const isAudio = file.type.startsWith('audio/');
 
     // Create temp message first so we can update it with progress
-    let type = 'image';
-    if (isPdf) type = 'document';
+    let type = 'file'; // Default to generic file
+    if (isImage) type = 'image';
     if (isVideo) type = 'video';
+    if (isAudio) type = 'audio';
+    if (isPdf) type = 'document';
 
     const metadata = {
-      ...(isPdf ? { filename: file.name, fileType: 'pdf' } : (isVideo ? { filename: file.name, fileType: 'video' } : {})),
+      filename: file.name,
+      fileType: file.type || 'application/octet-stream',
+      size: file.size,
       caption: caption,
       progress: 0 // Initial progress
     };

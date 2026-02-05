@@ -306,7 +306,8 @@ body.dark .form-group textarea {
 
 body.dark .form-group input:focus,
 body.dark .form-group textarea:focus {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 body.dark .form-group input::placeholder,
@@ -328,7 +329,7 @@ body.dark .member-item:hover {
 }
 
 body.dark .member-item.selected {
-    background: rgba(102, 126, 234, 0.2);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 body.dark .member-name {
@@ -348,6 +349,11 @@ body.dark .btn-cancel {
     color: #e5e7eb;
 }
 
-body.dark .btn-cancel:hover {
-    background: rgba(255, 255, 255, 0.15);
+body.dark .btn-create {
+    background: #e5e7eb;
+    color: #1f2937;
+}
+
+body.dark .btn-create:hover:not(:disabled) {
+    background: #ffffff;
 }

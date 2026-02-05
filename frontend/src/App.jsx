@@ -252,7 +252,7 @@ export default function App() {
                 <button
                   onClick={() => setShowContactSwitcher(!showContactSwitcher)}
                   className={`p-2 rounded-lg transition-all duration-200 ${darkMode
-                    ? 'bg-gray-700 hover:bg-gray-600 text-indigo-400'
+                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
                     : 'bg-gray-100 hover:bg-gray-200 text-indigo-600'
                     }`}
                   title="Quick switch contacts"
@@ -289,7 +289,7 @@ export default function App() {
                 <button
                   onClick={() => setShowProfileModal(true)}
                   className={`p-2 rounded-lg transition-all duration-200 ${darkMode
-                    ? 'bg-gray-700 hover:bg-gray-600 text-indigo-400'
+                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
                     : 'bg-gray-100 hover:bg-gray-200 text-indigo-600'
                     }`}
                   title="View Profile"
@@ -303,7 +303,7 @@ export default function App() {
               {user && (
                 <>
                   <div className={`hidden md:block text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Welcome, <span className="font-semibold text-indigo-600">{user.displayName || user.username}</span>
+                    Welcome, <span className={`font-semibold ${darkMode ? 'text-white' : 'text-indigo-600'}`}>{user.displayName || user.username}</span>
                   </div>
                 </>
               )}
