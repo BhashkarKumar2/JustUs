@@ -216,18 +216,25 @@ export const clearMediaCache = () => {
 };
 
 export const getAuthenticatedMediaUrl = (path) => {
+  if (!path) return null;
+
   const token = localStorage.getItem('token');
-  if (!token) return null;
+  if (!token) return path; // Return original if no token (might be public or will fail later)
 
   const baseApi = process.env.REACT_APP_API_URL || 'http://localhost:5000';
   let fullUrl = path;
 
   // Handle relative paths
-  if (path && path.startsWith('/')) {
+  if (path.startsWith('/')) {
     fullUrl = `${baseApi}${path}`;
-  } else if (path && !path.startsWith('http')) {
-    // If it's a relative path without leading slash (unlikely but possible)
-    fullUrl = `${baseApi}/${path}`;
+  } else if (!path.startsWith('http')) {
+    // Assume it's just an ID or partial path
+    // If it looks like an ID (alphanumeric, no slashes), prepend the standard route
+    if (!path.includes('/')) {
+      fullUrl = `${baseApi}/api/media/file/${path}`;
+    } else {
+      fullUrl = `${baseApi}/${path}`;
+    }
   }
 
   try {
@@ -235,7 +242,7 @@ export const getAuthenticatedMediaUrl = (path) => {
     url.searchParams.set('token', token);
     return url.toString();
   } catch (e) {
-    console.error('Invalid URL:', fullUrl);
-    return null;
+    console.error('Invalid URL reconstruction:', fullUrl);
+    return path; // Fallback to original
   }
 };

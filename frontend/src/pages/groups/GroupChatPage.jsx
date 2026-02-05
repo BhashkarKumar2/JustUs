@@ -185,7 +185,11 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
                             filename: message.metadata?.filename
                         })}
                         onError={(e) => {
-                            console.error('GroupChat image load error', e);
+                            console.error('GroupChat image load error', {
+                                src: e.target.src,
+                                messageId: message.id,
+                                type: message.type
+                            });
                             e.target.style.display = 'none';
                         }}
                     />
