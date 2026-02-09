@@ -217,6 +217,73 @@ export default function useChatSocket({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // Listen for token refresh events from api.jsx
+  useEffect(() => {
+    const handleTokenChange = (event) => {
+      const newToken = event.detail.token;
+      if (newToken && newToken !== token) {
+        console.log('[useChatSocket] Token refreshed, reconnecting socket...');
+        // We can't update the 'token' prop directly as it comes from parent, 
+        // but we can force a reconnect with the new token via our ref/reconnect logic.
+        // Ideally, the parent component should also update, but this ensures immediate socket fix.
+
+        // Disconnect existing
+        disconnectSocket();
+
+        // Reconnect with new token
+        connectSocket(newToken,
+          (message) => handleWebSocketMessage(message),
+          () => {
+            connectedRef.current = true;
+            setConnectionStatus('connected');
+            setIsReconnecting(false);
+            setReconnectAttempts(0);
+            isAuthErrorRef.current = false;
+          },
+          // Re-use the same handlers
+          {
+            onDeleted: (deletedMessage) => {
+              const messageIdToDelete = deletedMessage.id;
+              setMessagesRef.current(prev => prev.filter(msg => msg.id !== messageIdToDelete));
+            },
+            onEdited: (editedMessage) => {
+              setMessagesRef.current(prev => prev.map(msg => msg.id === editedMessage.id ? { ...msg, content: editedMessage.content } : msg));
+            },
+            onUpdated: (updatedMessage) => {
+              setMessagesRef.current(prev => {
+                const index = prev.findIndex(m => m.id === updatedMessage.id);
+                if (index === -1) return prev;
+                const newMessages = [...prev];
+                newMessages[index] = { ...newMessages[index], ...updatedMessage };
+                return newMessages;
+              });
+            },
+            onUserStatus: (statusData) => {
+              if (onUserStatusChange) onUserStatusChange(statusData);
+            },
+            onAuthError: (error) => {
+              console.error('Socket Authentication Failed (after refresh):', error);
+              setConnectionStatus('auth_error');
+              isAuthErrorRef.current = true;
+              setIsReconnecting(false);
+            },
+            onConnectionLost: (error) => {
+              connectedRef.current = false;
+              setConnectionStatus('disconnected');
+              if (error && (error.message || '').includes('jwt expired')) return;
+              setTimeout(() => { if (!connectedRef.current) reconnectWebSocket(); }, 2000);
+            }
+          }
+        );
+      }
+    };
+
+    window.addEventListener('auth:token-changed', handleTokenChange);
+    return () => {
+      window.removeEventListener('auth:token-changed', handleTokenChange);
+    };
+  }, [token, handleWebSocketMessage, onUserStatusChange, reconnectWebSocket]);
+
   const lastTypingTimeRef = useRef(0);
 
   const onTyping = useCallback((targetUserId, targetConversationId) => {

@@ -134,6 +134,13 @@ export function setAuthToken(token) {
         delete api.defaults.headers.common['Authorization'];
         localStorage.removeItem('token');
     }
+
+    // Dispatch custom event to notify other parts of the app (like Socket) about the token change
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:token-changed', {
+            detail: { token }
+        }));
+    }
 }
 
 export default api;
