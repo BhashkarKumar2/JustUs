@@ -49,25 +49,25 @@ npm run client
 ```mermaid
 graph TB
   subgraph ClientLayer
-    C[User Client<br/>React (Vite), PWA]
+    C["User Client\nReact (Vite), PWA"]
   end
 
   subgraph EdgeLayer
-    CDN[CDN / Static Hosting]
-    LB[Load Balancer]
+    CDN["CDN / Static Hosting"]
+    LB["Load Balancer"]
   end
 
   subgraph AppLayer
-    FE[Frontend Server (static)]
-    API[API Layer<br/>Express + Node.js]
-    SIO[Socket.io Server]
-    AI[AI Services (Google / OpenAI)]
+    FE["Frontend Server (static)"]
+    API["API Layer\nExpress + Node.js"]
+    SIO["Socket.io Server"]
+    AI["AI Services\n(Google / OpenAI)"]
   end
 
   subgraph DataLayer
-    DB[MongoDB Replica Set]
-    Cache[Redis (pub/sub, sessions)]
-    ObjectStore[S3-compatible storage]
+    DB["MongoDB Replica Set"]
+    Cache["Redis (pub/sub, sessions)"]
+    ObjectStore["S3-compatible storage"]
   end
 
   C -->|HTTP / WebSocket| CDN
@@ -154,13 +154,13 @@ Security considerations
 
 ```mermaid
 graph TB
-  Core[JustUs Core - Real-time Chat]
-  Core --> RT[Socket.io - Rooms]
-  Core --> AUTH[Auth - JWT / Sessions]
-  Core --> MEDIA[Media Upload - Multer -> ObjectStore]
-  Core --> AI[AI - Assist & Translate (opt-in)]
-  Core --> PWA[PWA - Offline Support / Caching]
-  Core --> PERF[Caching / Virtualization - Redis / react-virtuoso]
+  Core["JustUs Core - Real-time Chat"]
+  Core --> RT["Socket.io - Rooms"]
+  Core --> AUTH["Auth - JWT / Sessions"]
+  Core --> MEDIA["Media Upload - Multer -> ObjectStore"]
+  Core --> AI["AI - Assist and Translate (opt-in)"]
+  Core --> PWA["PWA - Offline Support / Caching"]
+  Core --> PERF["Caching / Virtualization - Redis / react-virtuoso"]
 ```
 
 Per-feature notes
