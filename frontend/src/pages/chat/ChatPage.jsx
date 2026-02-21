@@ -27,6 +27,7 @@ import useMessageSender from '../../hooks/useMessageSender';
 import { forwardMessage } from '../../services/chat';
 import { saveWallpaper } from '../../services/wallpaperService';
 import { mergeMessages } from '../../utils/chatUtils';
+import api from '../../services/api';
 import OnboardingTour from '../../components/OnboardingTour';
 // Group Chat Imports
 import GroupListPanel from '../../components/groups/GroupListPanel';
@@ -130,17 +131,21 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Onboarding Tour Trigger
+  // Onboarding Tour Trigger (flag stored in database)
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('hasSeenTour_v2');
-    if (!hasSeenTour) {
+    if (!user.hasCompletedTour) {
       setTimeout(() => setShowTour(true), 1500); // Small delay for UX
     }
-  }, []);
+  }, [user.hasCompletedTour]);
 
   const handleTourClose = () => {
     setShowTour(false);
-    localStorage.setItem('hasSeenTour_v2', 'true');
+    // Persist to database
+    api.post('/api/auth/complete-tour').catch(err =>
+      console.error('Failed to save tour status:', err)
+    );
+    // Update local user state immediately
+    if (onUserUpdate) onUserUpdate({ hasCompletedTour: true });
   };
 
   // Theme effect - Managed globally by App.jsx, but we ensure body class is correct just in case

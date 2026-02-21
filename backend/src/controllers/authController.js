@@ -202,7 +202,8 @@ export const verifyEmail = async (req, res) => {
         username: user.username,
         displayName: user.displayName,
         email: user.email,
-        avatarUrl: user.avatarUrl
+        avatarUrl: user.avatarUrl,
+        hasCompletedTour: user.hasCompletedTour || false
       }
     });
 
@@ -310,7 +311,8 @@ export const login = async (req, res) => {
         username: user.username,
         displayName: user.displayName,
         email: user.email,
-        avatarUrl: user.avatarUrl
+        avatarUrl: user.avatarUrl,
+        hasCompletedTour: user.hasCompletedTour || false
       }
     });
   } catch (error) {
@@ -667,3 +669,12 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+export const completeTour = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.userId, { hasCompletedTour: true });
+    res.json({ message: 'Tour completed' });
+  } catch (error) {
+    console.error('Complete tour error:', error);
+    res.status(500).json({ message: 'Failed to update tour status' });
+  }
+};

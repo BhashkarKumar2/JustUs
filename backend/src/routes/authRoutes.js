@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, refreshToken, logout, getUsers, getUserById, verifyEmail, resendVerification, connectUser, uploadAvatar, getAvatar, avatarUploadMiddleware, updateProfile, forgotPassword, resetPassword } from '../controllers/authController.js';
+import { register, login, refreshToken, logout, getUsers, getUserById, verifyEmail, resendVerification, connectUser, uploadAvatar, getAvatar, avatarUploadMiddleware, updateProfile, forgotPassword, resetPassword, completeTour } from '../controllers/authController.js';
 import { authenticateJWT } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 
@@ -39,5 +39,6 @@ router.post('/connect', authenticateJWT, connectUser);
 router.post('/avatar/upload', authenticateJWT, avatarUploadMiddleware, uploadAvatar);
 router.get('/avatar/:fileId', authenticateJWT, getAvatar); // SECURITY: Now requires authentication
 router.put('/profile', authenticateJWT, updateProfile);
+router.post('/complete-tour', authenticateJWT, completeTour);
 
 export default router;

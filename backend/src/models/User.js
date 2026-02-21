@@ -61,6 +61,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  hasCompletedTour: {
+    type: Boolean,
+    default: false
+  },
   resetPasswordToken: {
     type: String
   },
