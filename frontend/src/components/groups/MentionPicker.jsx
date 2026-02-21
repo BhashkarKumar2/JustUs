@@ -91,7 +91,7 @@ const MentionPicker = ({ members, onSelect, onClose, filterText, position }) => 
                     >
                         {option.isAI ? (
                             <>
-                                <div className="mention-avatar ai-avatar">🤖</div>
+                                <div className="mention-avatar ai-avatar">AI</div>
                                 <div className="mention-info">
                                     <div className="mention-name">AI Assistant</div>
                                     <div className="mention-hint">Get AI help in the group</div>

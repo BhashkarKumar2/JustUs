@@ -39,7 +39,7 @@ const BotMessage = ({ message }) => {
         </div>
         <div className="bot-message-content">
           <div className="bot-message-header">
-            <span className="bot-name">🤖 Bot Assistant</span>
+            <span className="bot-name">Bot Assistant</span>
             <span className="bot-badge">AI</span>
           </div>
           <div className="bot-message-text">

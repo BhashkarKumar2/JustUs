@@ -28,21 +28,21 @@ Always maintain a professional yet conversational tone.`;
 
     this.initialized = true;
     const apiKey = process.env.GEMINI_API_KEY;
-    
+
     if (!apiKey) {
-      console.warn('⚠️  GEMINI_API_KEY not set. Bot features will be disabled.');
-      console.warn('⚠️  Please add GEMINI_API_KEY to your .env file');
+      console.warn('[WARN] GEMINI_API_KEY not set. Bot features will be disabled.');
+      console.warn('[WARN] Please add GEMINI_API_KEY to your .env file');
       this.genAI = null;
       return false;
     }
 
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      console.log('✓ Bot Service initialized');
-      console.log('✓ Using Gemini API key:', apiKey.substring(0, 10) + '...');
+      console.log('[OK] Bot Service initialized');
+      console.log('[OK] Using Gemini API key:', apiKey.substring(0, 10) + '...');
       return true;
     } catch (error) {
-      console.error('❌ Failed to initialize Bot Service:', error.message);
+      console.error('[FAIL] Failed to initialize Bot Service:', error.message);
       this.genAI = null;
       return false;
     }
@@ -102,7 +102,7 @@ Always maintain a professional yet conversational tone.`;
 
       // Build the prompt with context
       let fullPrompt = this.systemPrompt + '\n\n';
-      
+
       // Add conversation context if provided
       if (context.recentMessages && context.recentMessages.length > 0) {
         fullPrompt += 'Recent conversation context:\n';
@@ -132,7 +132,7 @@ Always maintain a professional yet conversational tone.`;
         name: error.name,
         response: error.response
       });
-      
+
       // Handle specific error cases
       if (error.message?.includes('API key')) {
         return {
@@ -171,7 +171,7 @@ Always maintain a professional yet conversational tone.`;
    * @returns {string}
    */
   getHelpText() {
-    return `🤖 **Bot Assistant Help**
+    return `**Bot Assistant Help**
 
 To activate me, simply type **@#** followed by your question or request.
 
@@ -183,14 +183,14 @@ To activate me, simply type **@#** followed by your question or request.
 • @# Translate "hello" to Spanish
 
 I can help you with:
-✓ Answering questions
-✓ Web searches
-✓ Calculations
-✓ Recommendations
-✓ Explanations
-✓ And much more!
+- Answering questions
+- Web searches
+- Calculations
+- Recommendations
+- Explanations
+- And much more!
 
-Just ask me anything! 😊`;
+Just ask me anything!`;
   }
 
   /**
@@ -212,7 +212,7 @@ Just ask me anything! 😊`;
     if (normalizedQuery === 'about' || normalizedQuery === '/about') {
       return {
         success: true,
-        response: '🤖 I\'m an AI assistant powered by Google\'s Gemini, integrated into JustUs to help you with information, answers, and assistance right within your conversations!',
+        response: 'I\'m an AI assistant powered by Google\'s Gemini, integrated into JustUs to help you with information, answers, and assistance right within your conversations!',
         isSpecialCommand: true
       };
     }
@@ -236,7 +236,7 @@ Just ask me anything! 😊`;
     }
 
     const query = this.extractQuery(messageText);
-    
+
     // Check for special commands first
     const specialResponse = this.handleSpecialCommands(query);
     if (specialResponse) {

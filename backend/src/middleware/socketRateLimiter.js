@@ -18,7 +18,7 @@ class SocketRateLimiter {
             this.cleanup();
         }, this.windowMs);
 
-        console.log(`✓ Rate Limiter initialized (${this.maxRequests} req/${this.windowMs}ms)`);
+        console.log(`[OK] Rate Limiter initialized (${this.maxRequests} req/${this.windowMs}ms)`);
     }
 
     /**

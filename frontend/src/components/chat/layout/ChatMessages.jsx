@@ -116,11 +116,11 @@ const MessageItem = React.memo(({
     const getReplyContent = () => {
       switch (replyMessage.type) {
         case 'text': return replyMessage.content;
-        case 'image': return '📷 Image';
-        case 'video': return '🎥 Video';
-        case 'audio': return '🎤 Voice message';
-        case 'document': return `📄 ${replyMessage.metadata?.filename || 'Document'}`;
-        case 'call': return '📞 Call';
+        case 'image': return 'Image';
+        case 'video': return 'Video';
+        case 'audio': return 'Voice message';
+        case 'document': return `${replyMessage.metadata?.filename || 'Document'}`;
+        case 'call': return 'Call';
         default: return replyMessage.content;
       }
     };

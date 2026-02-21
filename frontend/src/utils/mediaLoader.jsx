@@ -7,12 +7,12 @@ const blobCache = new Map(); // Keep blobs in memory to prevent garbage collecti
 export const loadAuthenticatedMedia = async (mediaUrl, mediaId) => {
   // Check if we already have this media cached
   if (mediaCache.has(mediaId)) {
-    console.log('🎵 MediaLoader: Using cached media for ID:', mediaId);
+    console.log('[MediaLoader] Using cached media for ID:', mediaId);
     return mediaCache.get(mediaId);
   }
 
   try {
-    console.log('🎵 MediaLoader: Loading authenticated media');
+    console.log('[MediaLoader] Loading authenticated media');
     console.log('  Original URL:', mediaUrl);
     console.log('  Media ID:', mediaId);
 
@@ -37,14 +37,14 @@ export const loadAuthenticatedMedia = async (mediaUrl, mediaId) => {
     // Ensure we have a token before making the request
     const token = localStorage.getItem('token');
     if (!token) {
-      console.error('🎵 MediaLoader: ❌ No authentication token available');
+      console.error('[MediaLoader] No authentication token available');
       throw new Error('No authentication token available');
     }
 
-    console.log('🎵 MediaLoader: Token found:', token.substring(0, 30) + '...');
+    console.log('[MediaLoader] Token found:', token.substring(0, 30) + '...');
 
     // Method 1: Try with Authorization header
-    console.log('🎵 MediaLoader: Attempting fetch with Authorization header');
+    console.log('[MediaLoader] Attempting fetch with Authorization header');
     try {
       const headerResponse = await fetch(apiUrl, {
         method: 'GET',
@@ -69,7 +69,7 @@ export const loadAuthenticatedMedia = async (mediaUrl, mediaId) => {
         console.log('  Blob URL:', blobUrl);
         return blobUrl;
       } else if (headerResponse.status === 401) {
-        console.warn('🎵 MediaLoader: Header auth returned 401 - Token expired, redirecting to sign in');
+        console.warn('[MediaLoader] Header auth returned 401 - Token expired, redirecting to sign in');
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
         localStorage.removeItem('username');
@@ -77,11 +77,11 @@ export const loadAuthenticatedMedia = async (mediaUrl, mediaId) => {
         throw new Error('Authentication expired');
       }
     } catch (headerError) {
-      console.warn('🎵 MediaLoader: Header auth failed:', headerError.message);
+      console.warn('[MediaLoader] Header auth failed:', headerError.message);
     }
 
     // Method 2: Fallback to query parameter
-    console.log('🎵 MediaLoader: Attempting fetch with token query parameter');
+    console.log('[MediaLoader] Attempting fetch with token query parameter');
     const separator = apiUrl.includes('?') ? '&' : '?';
     const urlWithToken = `${apiUrl}${separator}token=${token}`;
 
@@ -99,12 +99,12 @@ export const loadAuthenticatedMedia = async (mediaUrl, mediaId) => {
     console.log('  Response status:', queryResponse.status);
 
     if (!queryResponse.ok) {
-      console.error('❌ MediaLoader: Query param auth also failed');
+      console.error('[MediaLoader] Query param auth also failed');
       console.error('  Status:', queryResponse.status);
 
       // Handle 401 errors
       if (queryResponse.status === 401) {
-        console.warn('🎵 MediaLoader: Authentication expired, redirecting to sign in');
+        console.warn('[MediaLoader] Authentication expired, redirecting to sign in');
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
         localStorage.removeItem('username');
@@ -123,7 +123,7 @@ export const loadAuthenticatedMedia = async (mediaUrl, mediaId) => {
     return blobUrl;
 
   } catch (error) {
-    console.error('❌ MediaLoader: Failed to load authenticated media');
+    console.error('[MediaLoader] Failed to load authenticated media');
     console.error('  Error:', error.message);
     throw error;
   }

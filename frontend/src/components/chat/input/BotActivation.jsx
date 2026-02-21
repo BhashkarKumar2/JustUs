@@ -32,7 +32,7 @@ const BotActivation = ({ isActive, onDeactivate }) => {
           </svg>
         </div>
         <div className="bot-activation-text">
-          <div className="bot-activation-title">🤖 Bot Assistant Active</div>
+          <div className="bot-activation-title">Bot Assistant Active</div>
           <div className="bot-activation-subtitle">
             Ask me anything! I&apos;m here to help.
           </div>
@@ -42,7 +42,7 @@ const BotActivation = ({ isActive, onDeactivate }) => {
           onClick={onDeactivate}
           title="Exit bot mode"
         >
-          ✕
+          X
         </button>
       </div>
     </div>

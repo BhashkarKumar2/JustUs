@@ -23,7 +23,7 @@ class TranscriptionService {
       this.model = 'whisper-large-v3';
       this.provider = 'Groq';
       this.initialized = true;
-      console.log('✓ Transcription Service initialized with Groq (Whisper-v3)');
+      console.log('[OK] Transcription Service initialized with Groq (Whisper-v3)');
       return true;
     }
 
@@ -35,11 +35,11 @@ class TranscriptionService {
       this.model = 'whisper-1';
       this.provider = 'OpenAI';
       this.initialized = true;
-      console.log('✓ Transcription Service initialized with OpenAI');
+      console.log('[OK] Transcription Service initialized with OpenAI');
       return true;
     }
 
-    console.warn('⚠️  GROQ_API_KEY not set. Transcription service disabled.');
+    console.warn('[WARN] GROQ_API_KEY not set. Transcription service disabled.');
     return false;
   }
 
@@ -81,7 +81,7 @@ class TranscriptionService {
       console.error(`[Transcription] ${this.provider} Error:`, error.message);
 
       if (error.status === 429) {
-        console.error('⚠️ Rate Limit Exceeded. Consider upgrading plan or rotating keys.');
+        console.error('[WARN] Rate Limit Exceeded. Consider upgrading plan or rotating keys.');
       }
 
       return null;

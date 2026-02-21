@@ -13,7 +13,7 @@ const resetDailyCounterIfNeeded = () => {
   if (today !== lastResetDate) {
     dailyEmailCount = 0;
     lastResetDate = today;
-    console.log('✓ Daily email counter reset');
+    console.log('[OK] Daily email counter reset');
   }
 };
 
@@ -24,7 +24,7 @@ export const sendVerificationEmail = async (email, name, code) => {
 
     // Check if daily limit reached
     if (dailyEmailCount >= MAX_DAILY_EMAILS) {
-      console.error(`❌ Daily Brevo limit reached! (${dailyEmailCount}/${MAX_DAILY_EMAILS})`);
+      console.error(`[LIMIT] Daily Brevo limit reached! (${dailyEmailCount}/${MAX_DAILY_EMAILS})`);
       console.log(`[LIMIT REACHED] Verification code for ${email}: ${code}`);
       return false;
     }
@@ -77,7 +77,7 @@ export const sendVerificationEmail = async (email, name, code) => {
     });
 
     dailyEmailCount++;
-    console.log(`✓ Verification email sent to ${email} (${dailyEmailCount}/${MAX_DAILY_EMAILS} today)`);
+    console.log(`[OK] Verification email sent to ${email} (${dailyEmailCount}/${MAX_DAILY_EMAILS} today)`);
     return true;
   } catch (error) {
     console.error('Error sending email:', error.response?.data || error.message);
@@ -90,7 +90,7 @@ export const sendPasswordResetEmail = async (email, name, code) => {
     resetDailyCounterIfNeeded();
 
     if (dailyEmailCount >= MAX_DAILY_EMAILS) {
-      console.error(`❌ Daily Brevo limit reached! (${dailyEmailCount}/${MAX_DAILY_EMAILS})`);
+      console.error(`[LIMIT] Daily Brevo limit reached! (${dailyEmailCount}/${MAX_DAILY_EMAILS})`);
       console.log(`[LIMIT REACHED] Reset code for ${email}: ${code}`);
       return false;
     }
@@ -137,7 +137,7 @@ export const sendPasswordResetEmail = async (email, name, code) => {
     });
 
     dailyEmailCount++;
-    console.log(`✓ Password reset email sent to ${email}`);
+    console.log(`[OK] Password reset email sent to ${email}`);
     return true;
   } catch (error) {
     console.error('Error sending reset email:', error.response?.data || error.message);

@@ -439,7 +439,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
               borderBottom: activeTab === 'chats' ? (darkMode ? '2px solid #e5e7eb' : '2px solid #667eea') : '2px solid transparent'
             }}
           >
-            💬 Chats
+            Chats
           </button>
           <button
             onClick={() => setActiveTab('groups')}
@@ -457,7 +457,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
               borderBottom: activeTab === 'groups' ? (darkMode ? '2px solid #e5e7eb' : '2px solid #667eea') : '2px solid transparent'
             }}
           >
-            👥 Groups
+            Groups
           </button>
         </div>
 
@@ -534,12 +534,12 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
             {/* Status Banners */}
             {realConnectionStatus !== 'connected' && (
               <div style={{ padding: '8px', backgroundColor: realConnectionStatus === 'reconnecting' ? '#f59e0b' : '#ef4444', color: 'white', textAlign: 'center', zIndex: 10 }}>
-                {realConnectionStatus === 'reconnecting' ? '🔄 Reconnecting...' : '⚠️ Disconnected'}
+                {realConnectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Disconnected'}
               </div>
             )}
             {showRateLimitWarning && (
               <div style={{ padding: '8px', backgroundColor: '#fbbf24', color: '#78350f', textAlign: 'center', zIndex: 10 }}>
-                ⚠️ Too many messages. Wait {rateLimitRetryAfter}s.
+                Too many messages. Wait {rateLimitRetryAfter}s.
               </div>
             )}
 

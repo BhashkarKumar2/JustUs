@@ -191,7 +191,7 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
                                         disabled={uploading}
                                         title="Change Group Icon"
                                     >
-                                        {uploading ? '...' : '📷'}
+                                        {uploading ? '...' : 'Edit'}
                                     </button>
                                     <input
                                         ref={fileInputRef}
@@ -261,11 +261,11 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
                                             <div className="member-actions">
                                                 {!memberIsAdmin && (
                                                     <button onClick={() => handlePromoteAdmin(memberId)} title="Make Admin">
-                                                        👑
+                                                        Admin
                                                     </button>
                                                 )}
                                                 <button onClick={() => handleRemoveMember(memberId)} title="Remove">
-                                                    ❌
+                                                    Remove
                                                 </button>
                                             </div>
                                         )}

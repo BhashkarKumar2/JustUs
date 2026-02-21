@@ -18,17 +18,17 @@ class GeminiService {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      console.warn('⚠️  GEMINI_API_KEY not set. AI features will be disabled.');
+      console.warn('[WARN] GEMINI_API_KEY not set. AI features will be disabled.');
       this.genAI = null;
       return false;
     }
 
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      console.log('✓ Gemini AI Service initialized');
+      console.log('[OK] Gemini AI Service initialized');
       return true;
     } catch (error) {
-      console.error('❌ Failed to initialize Gemini AI:', error.message);
+      console.error('[FAIL] Failed to initialize Gemini AI:', error.message);
       this.genAI = null;
       return false;
     }

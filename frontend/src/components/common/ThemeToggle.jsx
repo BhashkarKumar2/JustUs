@@ -33,7 +33,7 @@ export default function ThemeToggle({ theme, setTheme }) {
       onMouseEnter={e => e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}
       onMouseLeave={e => e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'}
     >
-      {theme === 'light' ? '🌙' : '☀️'}
+      {theme === 'light' ? 'Dark' : 'Light'}
     </button>
   );
 }

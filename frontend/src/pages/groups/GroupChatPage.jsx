@@ -182,7 +182,7 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
 
     // Get sender display name
     const getSenderName = (message) => {
-        if (isAIMessage(message)) return '🤖 AI Assistant';
+        if (isAIMessage(message)) return 'AI Assistant';
         if (message.senderId === user.id) return 'You';
         return message.senderDisplayName || 'Unknown';
     };
@@ -256,7 +256,7 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
             return (
                 <div className="message-attachment doc">
                     <a href={getContentUrl(message.content)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition" onClick={(e) => e.stopPropagation()}>
-                        <span className="text-2xl">📄</span>
+                        <span className="text-2xl">DOC</span>
                         <div className="flex flex-col">
                             <span className="font-medium text-gray-800 dark:text-gray-200 truncate max-w-[200px]">{message.metadata?.filename || 'Attached File'}</span>
                             {message.metadata?.size && <span className="text-xs text-gray-500">{(message.metadata.size / 1024).toFixed(1)} KB</span>}
@@ -323,7 +323,7 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => { // Added 
                         </div>
                         <div className="message-content">
                             {message.deleted
-                                ? '🗑️ This message was deleted'
+                                ? 'This message was deleted'
                                 : (
                                     <>
                                         {message.type !== 'text' && renderAttachment(message)}

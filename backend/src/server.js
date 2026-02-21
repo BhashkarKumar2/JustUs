@@ -185,9 +185,9 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
-  console.log('✓ Web Push configured');
+  console.log('[OK] Web Push configured');
 } else {
-  console.warn('! Web Push keys missing in .env');
+  console.warn('[WARN] Web Push keys missing in .env');
 }
 
 mongoose.connect(MONGODB_URI, {
@@ -199,34 +199,34 @@ mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 5000
 })
   .then(async () => {
-    console.log('✓ Connected to MongoDB');
+    console.log('[OK] Connected to MongoDB');
 
     // Health check on startup
     try {
       const adminDb = mongoose.connection.db.admin();
       const pingResult = await adminDb.ping();
-      console.log('✓ MongoDB ping successful:', pingResult);
+      console.log('[OK] MongoDB ping successful:', pingResult);
 
       const collections = await mongoose.connection.db.listCollections().toArray();
-      console.log(`✓ Available collections: ${collections.map(c => c.name).join(', ')}`);
+      console.log(`[OK] Available collections: ${collections.map(c => c.name).join(', ')}`);
 
       // Check GridFS files
       const filesCollection = mongoose.connection.db.collection('fs.files');
       const fileCount = await filesCollection.countDocuments();
-      console.log(`✓ GridFS files count: ${fileCount}`);
+      console.log(`[OK] GridFS files count: ${fileCount}`);
     } catch (error) {
-      console.error('✗ Startup health check failed:', error.message);
+      console.error('[FAIL] Startup health check failed:', error.message);
     }
 
     // Start server
     httpServer.listen(PORT, '0.0.0.0', () => {
-      console.log(`✓ Server is running on port ${PORT}`);
-      console.log(`✓ Environment: ${NODE_ENV}`);
-      console.log(`✓ Allowed Origins: ${allowedOrigins.join(', ')}`);
+      console.log(`[OK] Server is running on port ${PORT}`);
+      console.log(`[OK] Environment: ${NODE_ENV}`);
+      console.log(`[OK] Allowed Origins: ${allowedOrigins.join(', ')}`);
     });
   })
   .catch(err => {
-    console.error('✗ MongoDB connection error:', err);
+    console.error('[FAIL] MongoDB connection error:', err);
     process.exit(1);
   });
 

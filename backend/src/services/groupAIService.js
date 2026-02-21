@@ -32,17 +32,17 @@ Always be respectful and professional.`;
         const apiKey = process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
-            console.warn('⚠️  GEMINI_API_KEY not set. Group AI features will be disabled.');
+            console.warn('[WARN] GEMINI_API_KEY not set. Group AI features will be disabled.');
             this.genAI = null;
             return false;
         }
 
         try {
             this.genAI = new GoogleGenerativeAI(apiKey);
-            console.log('✓ Group AI Service initialized');
+            console.log('[OK] Group AI Service initialized');
             return true;
         } catch (error) {
-            console.error('❌ Failed to initialize Group AI Service:', error.message);
+            console.error('[FAIL] Failed to initialize Group AI Service:', error.message);
             this.genAI = null;
             return false;
         }
@@ -345,7 +345,7 @@ Action Items:`;
     }
 
     getHelpText() {
-        return `🤖 **Group AI Assistant Help**
+        return `**Group AI Assistant Help**
 
 Tag me with **@AI** followed by your request!
 
@@ -360,7 +360,7 @@ Tag me with **@AI** followed by your request!
 • @AI Who was supposed to handle the design?
 • @AI summarize last 2 hours
 
-I'm here to help! 😊`;
+I'm here to help!`;
     }
 }
 

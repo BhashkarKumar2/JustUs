@@ -97,7 +97,7 @@ export default function OnboardingTour({ isOpen, onClose }) {
                         Tip {currentStep + 1} of {steps.length}
                     </span>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                        ✕
+                        X
                     </button>
                 </div>
 

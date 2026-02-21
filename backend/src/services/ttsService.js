@@ -26,30 +26,30 @@ class TTSService {
 
     try {
       let clientConfig = {};
-      
+
       // Check if credentials are in environment variable (for production)
       if (process.env.GOOGLE_CLOUD_CREDENTIALS) {
         console.log('Using Google Cloud credentials from environment variable');
         const credentials = JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS);
         clientConfig = { credentials };
-      } 
+      }
       // Otherwise use key file (for local development)
       else {
-        const keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || 
-                        path.join(__dirname, '../../justus-482306-a3598fb1cbe5.json');
-        
+        const keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+          path.join(__dirname, '../../justus-482306-a3598fb1cbe5.json');
+
         if (!fs.existsSync(keyPath)) {
           throw new Error('Google Cloud credentials not found. Set GOOGLE_CLOUD_CREDENTIALS or GOOGLE_APPLICATION_CREDENTIALS');
         }
-        
+
         console.log('Using Google Cloud credentials from file:', keyPath);
         clientConfig = { keyFilename: keyPath };
       }
-      
+
       this.client = new textToSpeech.TextToSpeechClient(clientConfig);
-      
+
       this.initialized = true;
-      console.log('✓ Google Cloud TTS service initialized');
+      console.log('[OK] Google Cloud TTS service initialized');
     } catch (error) {
       console.error('Failed to initialize TTS service:', error);
       throw error;
@@ -95,7 +95,7 @@ class TTSService {
 
     try {
       const voiceConfig = this.getVoiceConfig(languageCode);
-      
+
       const request = {
         input: { text: text.trim() },
         voice: {
@@ -111,16 +111,16 @@ class TTSService {
       };
 
       console.log(`[TTS] Generating speech for language: ${languageCode}, voice: ${request.voice.name}`);
-      
+
       const [response] = await this.client.synthesizeSpeech(request);
-      
+
       if (!response.audioContent) {
         throw new Error('No audio content received from TTS service');
       }
 
       console.log(`[TTS] Generated audio: ${response.audioContent.length} bytes`);
       return response.audioContent;
-      
+
     } catch (error) {
       console.error('[TTS] Error generating speech:', error);
       throw new Error(`Failed to generate speech: ${error.message}`);
@@ -132,7 +132,7 @@ class TTSService {
    */
   async generateBatchSpeech(texts, languageCode = 'en', options = {}) {
     const results = [];
-    
+
     for (const text of texts) {
       try {
         const audio = await this.generateSpeech(text, languageCode, options);
@@ -142,7 +142,7 @@ class TTSService {
         results.push({ text, error: error.message, success: false });
       }
     }
-    
+
     return results;
   }
 }

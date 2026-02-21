@@ -8,15 +8,15 @@ export default function ReplyPreview({ replyToMessage, onCancel, colors }) {
       case 'text':
         return replyToMessage.content;
       case 'image':
-        return '📷 Image';
+        return 'Image';
       case 'audio':
-        return '🎤 Voice message';
+        return 'Voice message';
       case 'document':
-        return `📄 ${replyToMessage.metadata?.filename || 'Document'}`;
+        return `${replyToMessage.metadata?.filename || 'Document'}`;
       case 'video':
-        return '🎥 Video';
+        return 'Video';
       case 'call':
-        return '📞 Call';
+        return 'Call';
       default:
         return replyToMessage.content;
     }
@@ -67,7 +67,7 @@ export default function ReplyPreview({ replyToMessage, onCancel, colors }) {
         }}
         title="Cancel reply"
       >
-        ✕
+        X
       </button>
     </div>
   );

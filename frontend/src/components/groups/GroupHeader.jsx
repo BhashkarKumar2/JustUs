@@ -35,7 +35,7 @@ const GroupHeader = ({ group, onBack, onInfoClick }) => {
                     <div className="group-header-members">
                         {group.memberCount || group.members?.length || 0} members
                         {group.settings?.aiEnabled !== false && (
-                            <span className="ai-badge">🤖 AI enabled</span>
+                            <span className="ai-badge">AI enabled</span>
                         )}
                     </div>
                 </div>

@@ -343,7 +343,7 @@ export default function AudioMessage({ message, mine, colors, theme }) {
               {/* Display transcript if available */}
               {message.metadata?.transcript && (
                 <div className="mt-2 px-3 py-2 rounded-lg text-sm italic opacity-80" style={{ borderLeft: '3px solid currentColor', background: 'rgba(0,0,0,0.05)' }}>
-                  💬 &quot;{message.metadata.transcript}&quot;
+                  &quot;{message.metadata.transcript}&quot;
                 </div>
               )}
             </div>

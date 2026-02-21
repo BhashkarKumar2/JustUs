@@ -281,7 +281,7 @@ export default function UserSelectModal({ show, onClose, availableUsers, current
                       : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                     }`}
                 >
-                  {copiedCode ? '✓ Copied' : 'Copy'}
+                  {copiedCode ? 'Copied' : 'Copy'}
                 </button>
               </div>
             )}

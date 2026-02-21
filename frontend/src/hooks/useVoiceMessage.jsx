@@ -78,7 +78,7 @@ export default function useVoiceMessage({ userId, otherUserId, conversationId, s
         console.log('[VoiceMessage] Starting speech recognition...');
         recognitionRef.current.start();
       } else {
-        console.warn('[VoiceMessage] ⚠️ Speech Recognition not available!');
+        console.warn('[VoiceMessage] Speech Recognition not available!');
         console.warn('Translation will not work without transcript.');
         console.warn('Use Chrome or Edge browser for Speech Recognition support.');
       }
@@ -160,7 +160,7 @@ export default function useVoiceMessage({ userId, otherUserId, conversationId, s
               updateTempMessage({ translatedTranscript });
             }
           } catch (error) {
-            console.error('[VoiceTranslation] ✗ AI enhancement/translation failed:', error);
+            console.error('[VoiceTranslation] AI enhancement/translation failed:', error);
           }
           setTranscribing(false);
         } else {
