@@ -107,7 +107,18 @@ export default function App() {
     if (token && userData) {
       try {
         setAuthToken(token);
-        setUser(JSON.parse(userData));
+        const cachedUser = JSON.parse(userData);
+        setUser(cachedUser);
+
+        // Background refresh: fetch fresh user data from server
+        // This ensures fields like hasCompletedTour stay in sync
+        api.get(`/api/auth/user/${cachedUser.id}`)
+          .then(res => {
+            const freshUser = { ...cachedUser, ...res.data };
+            setUser(freshUser);
+            localStorage.setItem('userData', JSON.stringify(freshUser));
+          })
+          .catch(() => { }); // Keep cached data on failure
       } catch (error) {
         console.error('Failed to restore user session:', error);
         localStorage.clear();

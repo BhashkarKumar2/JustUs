@@ -485,7 +485,7 @@ export const getUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId, 'username displayName email avatarUrl preferredLanguage');
+    const user = await User.findById(userId, 'username displayName email avatarUrl preferredLanguage hasCompletedTour');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -497,7 +497,8 @@ export const getUserById = async (req, res) => {
       displayName: user.displayName,
       email: user.email,
       avatarUrl: user.avatarUrl,
-      preferredLanguage: user.preferredLanguage || 'en'
+      preferredLanguage: user.preferredLanguage || 'en',
+      hasCompletedTour: user.hasCompletedTour || false
     });
   } catch (error) {
     console.error('Get user by ID error:', error);
