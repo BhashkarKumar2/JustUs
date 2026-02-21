@@ -91,15 +91,55 @@ export const useGroupSocket = (groupId, user) => {
             }
         };
 
+        // Listen for read receipt updates
+        const handleMessageRead = (data) => {
+            if (data.groupId === groupId) {
+                setMessages(prev =>
+                    prev.map(m => {
+                        const msgId = (m.id || m._id)?.toString();
+                        if (data.messageIds.includes(msgId)) {
+                            const currentReadBy = m.readBy || [];
+                            if (currentReadBy.some(r => r.userId === data.userId)) return m;
+                            return {
+                                ...m,
+                                readBy: [...currentReadBy, { userId: data.userId, readAt: data.readAt }]
+                            };
+                        }
+                        return m;
+                    })
+                );
+            }
+        };
+
         socket.on('group.message', handleGroupMessage);
         socket.on('group.typing', handleGroupTyping);
         socket.on('group.message_deleted', handleMessageDeleted);
+        socket.on('group.message_read', handleMessageRead);
+
+        // Listen for reaction updates
+        const handleMessageReacted = (data) => {
+            if (data.groupId === groupId) {
+                setMessages(prev =>
+                    prev.map(m => {
+                        const msgId = (m.id || m._id)?.toString();
+                        if (msgId === data.messageId?.toString()) {
+                            return { ...m, reactions: data.reactions };
+                        }
+                        return m;
+                    })
+                );
+            }
+        };
+
+        socket.on('group.message_reacted', handleMessageReacted);
 
         return () => {
             socket.emit('group.leave', { groupId });
             socket.off('group.message', handleGroupMessage);
             socket.off('group.typing', handleGroupTyping);
             socket.off('group.message_deleted', handleMessageDeleted);
+            socket.off('group.message_read', handleMessageRead);
+            socket.off('group.message_reacted', handleMessageReacted);
 
             // Clear all typing timeouts using captured ref
             timeoutMapRef.forEach(timeout => clearTimeout(timeout));
@@ -136,6 +176,22 @@ export const useGroupSocket = (groupId, user) => {
         socket.emit('group.delete', { groupId, messageId });
     }, [groupId]);
 
+    // Mark messages as read
+    const sendRead = useCallback((messageIds) => {
+        const socket = getSocket();
+        if (!socket || !groupId || !messageIds || messageIds.length === 0) return;
+
+        socket.emit('group.read', { groupId, messageIds });
+    }, [groupId]);
+
+    // React to a message
+    const sendReaction = useCallback((messageId, emoji) => {
+        const socket = getSocket();
+        if (!socket || !groupId) return;
+
+        socket.emit('group.react', { groupId, messageId, emoji });
+    }, [groupId]);
+
     return {
         messages,
         setMessages,
@@ -143,6 +199,8 @@ export const useGroupSocket = (groupId, user) => {
         sendMessage,
         sendTyping,
         deleteMessage,
+        sendRead,
+        sendReaction,
         connectionStatus
     };
 };

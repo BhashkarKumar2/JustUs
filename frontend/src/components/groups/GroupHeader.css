@@ -9,7 +9,8 @@
 }
 
 .back-btn,
-.info-btn {
+.info-btn,
+.search-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -24,7 +25,8 @@
 }
 
 .back-btn:hover,
-.info-btn:hover {
+.info-btn:hover,
+.search-btn:hover {
     background: rgba(0, 0, 0, 0.05);
 }
 
@@ -110,12 +112,14 @@ body.dark .group-header {
 }
 
 body.dark .back-btn,
-body.dark .info-btn {
+body.dark .info-btn,
+body.dark .search-btn {
     color: #e5e7eb;
 }
 
 body.dark .back-btn:hover,
-body.dark .info-btn:hover {
+body.dark .info-btn:hover,
+body.dark .search-btn:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
@@ -128,5 +132,5 @@ body.dark .group-header-name {
 }
 
 body.dark .group-header-members {
-    color: #888;
+    color: #9ca3af;
 }

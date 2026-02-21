@@ -266,14 +266,25 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    font-size: 1rem;
-    padding: 4px;
-    opacity: 0.6;
-    transition: opacity 0.2s;
+    font-size: 0.85rem;
+    padding: 4px 8px;
+    color: #6b7280;
+    transition: color 0.2s, background 0.2s;
+    border-radius: 6px;
 }
 
 .member-actions button:hover {
-    opacity: 1;
+    color: #1f2937;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.dark .member-actions button {
+    color: #9ca3af;
+}
+
+body.dark .member-actions button:hover {
+    color: #f3f4f6;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .error-message {
@@ -331,7 +342,7 @@ body.dark .group-info-modal .modal-header h2 {
 }
 
 body.dark .group-info-modal .close-btn {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .group-info-modal .close-btn:hover {
@@ -339,19 +350,19 @@ body.dark .group-info-modal .close-btn:hover {
 }
 
 body.dark .group-profile h3 {
-    color: #e5e7eb;
+    color: #f3f4f6;
 }
 
 body.dark .group-description {
-    color: #888;
+    color: #9ba3af;
 }
 
 body.dark .group-stats {
-    color: #666;
+    color: #9ca3af;
 }
 
 body.dark .section h4 {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .invite-code-section {
@@ -381,7 +392,7 @@ body.dark .member-name {
 }
 
 body.dark .member-username {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .badge.creator {

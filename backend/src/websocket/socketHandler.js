@@ -844,6 +844,78 @@ export const configureSocketIO = (io) => {
       }
     });
 
+    // Group read receipts
+    socket.on('group.read', async (data) => {
+      try {
+        const { groupId, messageIds } = data;
+        const userId = socket.userId;
+
+        if (!groupId || !messageIds || !Array.isArray(messageIds) || messageIds.length === 0) return;
+
+        // Bulk update: add userId to readBy for all specified messages
+        const result = await Message.updateMany(
+          {
+            _id: { $in: messageIds },
+            groupId: groupId,
+            senderId: { $ne: userId }, // Don't mark own messages as read
+            'readBy.userId': { $ne: userId } // Don't duplicate
+          },
+          {
+            $addToSet: {
+              readBy: { userId, readAt: new Date() }
+            }
+          }
+        );
+
+        if (result.modifiedCount > 0) {
+          // Broadcast read receipt update to group
+          io.to(`group:${groupId}`).emit('group.message_read', {
+            groupId,
+            messageIds,
+            userId,
+            readAt: new Date()
+          });
+        }
+      } catch (error) {
+        console.error('Error handling group.read:', error);
+      }
+    });
+
+    // Group message reactions
+    socket.on('group.react', async (data) => {
+      try {
+        const { groupId, messageId, emoji } = data;
+        const userId = socket.userId;
+
+        if (!groupId || !messageId || !emoji) return;
+
+        const message = await Message.findOne({ _id: messageId, groupId });
+        if (!message) return;
+
+        // Toggle: remove if same emoji by same user, otherwise add
+        const existingIdx = (message.reactions || []).findIndex(
+          r => r.emoji === emoji && r.userId?.toString() === userId
+        );
+
+        if (existingIdx > -1) {
+          message.reactions.splice(existingIdx, 1);
+        } else {
+          message.reactions.push({ emoji, userId, createdAt: new Date() });
+        }
+
+        await message.save();
+
+        // Broadcast updated reactions to group
+        io.to(`group:${groupId}`).emit('group.message_reacted', {
+          groupId,
+          messageId,
+          reactions: message.reactions
+        });
+      } catch (error) {
+        console.error('Error handling group.react:', error);
+      }
+    });
+
     // ========== END GROUP CHAT EVENTS ==========
 
     socket.on('disconnect', () => {

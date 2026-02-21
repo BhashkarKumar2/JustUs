@@ -59,6 +59,10 @@ const groupSchema = new mongoose.Schema({
         unique: true,
         sparse: true
     },
+    pinnedMessages: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Message'
+    }],
     settings: {
         type: groupSettingsSchema,
         default: () => ({})

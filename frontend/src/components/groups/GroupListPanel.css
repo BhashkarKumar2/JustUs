@@ -222,12 +222,12 @@ body.dark .group-search-input {
 }
 
 body.dark .group-search-input::placeholder {
-    color: #666;
+    color: #6b7280;
 }
 
 body.dark .group-list-loading,
 body.dark .group-list-error {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .group-list-error {
@@ -235,7 +235,7 @@ body.dark .group-list-error {
 }
 
 body.dark .group-list-empty {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .group-list-item:hover {
@@ -251,14 +251,14 @@ body.dark .group-name {
 }
 
 body.dark .group-preview {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .group-time {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .group-member-count {
-    color: #666;
+    color: #9ca3af;
     background: rgba(255, 255, 255, 0.05);
 }

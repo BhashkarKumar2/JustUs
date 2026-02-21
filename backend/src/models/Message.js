@@ -109,6 +109,17 @@ const messageSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // Group read receipts - tracks which members have read this message
+  readBy: [{
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    readAt: { type: Date, default: Date.now }
+  }],
+  // Message reactions
+  reactions: [{
+    emoji: { type: String, required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    createdAt: { type: Date, default: Date.now }
+  }],
   // Bot message fields
   isBot: {
     type: Boolean,

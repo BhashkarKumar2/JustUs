@@ -576,3 +576,163 @@ export const deleteGroupMessage = async (req, res) => {
         res.status(500).json({ message: 'Failed to delete message', error: error.message });
     }
 };
+
+/**
+ * Pin/unpin a message in group (admin only)
+ * POST /api/groups/:id/pin/:messageId
+ */
+export const pinMessage = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { id, messageId } = req.params;
+
+        const group = await Group.findById(id);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        if (!group.isAdmin(userId)) {
+            return res.status(403).json({ message: 'Only admins can pin messages' });
+        }
+
+        const message = await Message.findOne({ _id: messageId, groupId: id, deleted: false });
+        if (!message) {
+            return res.status(404).json({ message: 'Message not found' });
+        }
+
+        if (message.type !== 'text') {
+            return res.status(400).json({ message: 'Only text messages can be pinned' });
+        }
+
+        const pinnedIndex = group.pinnedMessages.findIndex(
+            p => p.toString() === messageId
+        );
+
+        if (pinnedIndex > -1) {
+            // Unpin
+            group.pinnedMessages.splice(pinnedIndex, 1);
+            await group.save();
+            res.json({ success: true, pinned: false, message: 'Message unpinned' });
+        } else {
+            // Pin (max 10 pinned messages)
+            if (group.pinnedMessages.length >= 10) {
+                return res.status(400).json({ message: 'Maximum 10 pinned messages allowed' });
+            }
+            group.pinnedMessages.push(messageId);
+            await group.save();
+            res.json({ success: true, pinned: true, message: 'Message pinned' });
+        }
+    } catch (error) {
+        console.error('Pin message error:', error);
+        res.status(500).json({ message: 'Failed to pin message', error: error.message });
+    }
+};
+
+/**
+ * Get pinned messages for group
+ * GET /api/groups/:id/pinned
+ */
+export const getPinnedMessages = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { id } = req.params;
+
+        const group = await Group.findById(id);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        if (!group.isMember(userId)) {
+            return res.status(403).json({ message: 'You are not a member of this group' });
+        }
+
+        if (!group.pinnedMessages || group.pinnedMessages.length === 0) {
+            return res.json({ success: true, pinnedMessages: [] });
+        }
+
+        const messages = await Message.find({
+            _id: { $in: group.pinnedMessages },
+            deleted: false
+        });
+
+        // Get sender info
+        const senderIds = [...new Set(messages.map(m => m.senderId))];
+        const users = await User.find({ _id: { $in: senderIds } });
+        const userMap = {};
+        users.forEach(u => {
+            userMap[u._id.toString()] = {
+                id: u._id,
+                username: u.username,
+                displayName: u.displayName,
+                avatarUrl: u.avatarUrl
+            };
+        });
+
+        const enriched = messages.map(m => ({
+            ...m.toObject(),
+            sender: userMap[m.senderId] || { id: m.senderId, displayName: 'Unknown' }
+        }));
+
+        res.json({ success: true, pinnedMessages: enriched });
+    } catch (error) {
+        console.error('Get pinned messages error:', error);
+        res.status(500).json({ message: 'Failed to fetch pinned messages', error: error.message });
+    }
+};
+
+/**
+ * Search group messages
+ * GET /api/groups/:id/messages/search?q=term
+ */
+export const searchGroupMessages = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { id } = req.params;
+        const { q } = req.query;
+
+        if (!q || !q.trim()) {
+            return res.status(400).json({ message: 'Search query is required' });
+        }
+
+        const group = await Group.findById(id);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        if (!group.isMember(userId)) {
+            return res.status(403).json({ message: 'You are not a member of this group' });
+        }
+
+        const messages = await Message.find({
+            groupId: id,
+            deleted: false,
+            type: 'text',
+            content: { $regex: q.trim(), $options: 'i' }
+        })
+            .sort({ timestamp: -1 })
+            .limit(30);
+
+        // Get sender info
+        const senderIds = [...new Set(messages.map(m => m.senderId))];
+        const users = await User.find({ _id: { $in: senderIds } });
+        const userMap = {};
+        users.forEach(u => {
+            userMap[u._id.toString()] = {
+                id: u._id,
+                username: u.username,
+                displayName: u.displayName,
+                avatarUrl: u.avatarUrl
+            };
+        });
+
+        const enriched = messages.map(m => ({
+            ...m.toObject(),
+            sender: userMap[m.senderId] || { id: m.senderId, displayName: 'Unknown' }
+        }));
+
+        res.json({ success: true, messages: enriched, count: enriched.length });
+    } catch (error) {
+        console.error('Search group messages error:', error);
+        res.status(500).json({ message: 'Failed to search messages', error: error.message });
+    }
+};

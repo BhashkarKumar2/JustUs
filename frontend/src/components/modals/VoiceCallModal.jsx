@@ -110,7 +110,7 @@ export default function VoiceCallModal({
 
         {callState === 'ringing' && incomingCall && (
           <div>
-            <p style={{ color: colors?.timestamp || '#666', marginBottom: '32px' }}>
+            <p style={{ color: colors?.timestamp || '#6b7280', marginBottom: '32px' }}>
               Incoming voice call...
             </p>
             <div style={{
@@ -157,7 +157,7 @@ export default function VoiceCallModal({
             </p>
             <p style={{
               fontSize: '1.25rem',
-              color: colors?.timestamp || '#666',
+              color: colors?.timestamp || '#6b7280',
               marginBottom: '32px',
               fontFamily: 'monospace'
             }}>

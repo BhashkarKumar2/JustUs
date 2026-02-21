@@ -13,7 +13,10 @@ import {
     promoteToAdmin,
     demoteAdmin,
     joinViaInvite,
-    deleteGroupMessage
+    deleteGroupMessage,
+    pinMessage,
+    getPinnedMessages,
+    searchGroupMessages
 } from '../controllers/groupController.js';
 
 const router = express.Router();
@@ -34,8 +37,13 @@ router.delete('/:id/members/:memberId', removeMember);
 router.post('/:id/leave', leaveGroup);
 
 // Messages
+router.get('/:id/messages/search', searchGroupMessages);
 router.get('/:id/messages', getGroupMessages);
 router.delete('/:id/messages/:messageId', deleteGroupMessage);
+
+// Pinned messages
+router.post('/:id/pin/:messageId', pinMessage);
+router.get('/:id/pinned', getPinnedMessages);
 
 // Admin management
 router.post('/:id/admins', promoteToAdmin);

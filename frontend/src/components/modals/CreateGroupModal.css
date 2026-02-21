@@ -285,7 +285,7 @@ body.dark .modal-header h2 {
 }
 
 body.dark .close-btn {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .close-btn:hover {
@@ -294,7 +294,7 @@ body.dark .close-btn:hover {
 }
 
 body.dark .form-group label {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .form-group input,
@@ -312,7 +312,7 @@ body.dark .form-group textarea:focus {
 
 body.dark .form-group input::placeholder,
 body.dark .form-group textarea::placeholder {
-    color: #666;
+    color: #6b7280;
 }
 
 body.dark .members-list {
@@ -321,7 +321,7 @@ body.dark .members-list {
 }
 
 body.dark .no-contacts {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .member-item:hover {
@@ -337,7 +337,7 @@ body.dark .member-name {
 }
 
 body.dark .member-username {
-    color: #888;
+    color: #9ca3af;
 }
 
 body.dark .modal-actions {

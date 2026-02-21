@@ -5,7 +5,7 @@ import { getAuthenticatedMediaUrl } from '../../utils/mediaLoader';
 /**
  * GroupHeader - Header for group chat page
  */
-const GroupHeader = ({ group, onBack, onInfoClick }) => {
+const GroupHeader = ({ group, onBack, onInfoClick, onSearchClick }) => {
     if (!group) return null;
 
     return (
@@ -42,6 +42,14 @@ const GroupHeader = ({ group, onBack, onInfoClick }) => {
             </div>
 
             <div className="group-header-actions">
+                {onSearchClick && (
+                    <button className="search-btn" onClick={onSearchClick} title="Search messages">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                    </button>
+                )}
                 <button className="info-btn" onClick={onInfoClick}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />

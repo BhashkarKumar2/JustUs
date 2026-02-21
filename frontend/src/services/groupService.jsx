@@ -112,6 +112,30 @@ export const joinViaInvite = async (inviteCode) => {
     return response.data;
 };
 
+/**
+ * Pin/unpin a message in group
+ */
+export const pinMessage = async (groupId, messageId) => {
+    const response = await api.post(`/api/groups/${groupId}/pin/${messageId}`, {});
+    return response.data;
+};
+
+/**
+ * Get pinned messages for group
+ */
+export const getPinnedMessages = async (groupId) => {
+    const response = await api.get(`/api/groups/${groupId}/pinned`);
+    return response.data;
+};
+
+/**
+ * Search group messages
+ */
+export const searchGroupMessages = async (groupId, query) => {
+    const response = await api.get(`/api/groups/${groupId}/messages/search`, { params: { q: query } });
+    return response.data;
+};
+
 export default {
     createGroup,
     getGroups,
@@ -125,5 +149,8 @@ export default {
     deleteGroupMessage,
     promoteToAdmin,
     demoteAdmin,
-    joinViaInvite
+    joinViaInvite,
+    pinMessage,
+    getPinnedMessages,
+    searchGroupMessages
 };

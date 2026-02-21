@@ -81,7 +81,7 @@ export default function SmartSearch({ conversationId, onResultClick, darkMode, o
             style={{
               background: 'transparent',
               border: 'none',
-              color: darkMode ? '#8696a0' : '#666',
+              color: darkMode ? '#9ca3af' : '#6b7280',
               cursor: 'pointer',
               padding: '8px',
               borderRadius: '50%'
@@ -136,7 +136,7 @@ export default function SmartSearch({ conversationId, onResultClick, darkMode, o
           {searching && (
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <LoadingSpinner />
-              <p style={{ color: darkMode ? '#8696a0' : '#666', marginTop: '16px', fontSize: '14px' }}>
+              <p style={{ color: darkMode ? '#9ca3af' : '#6b7280', marginTop: '16px', fontSize: '14px' }}>
                 AI is analyzing your messages...
               </p>
             </div>

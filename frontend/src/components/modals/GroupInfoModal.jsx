@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { getSocket } from '../../services/socket';
 import { toast } from 'react-hot-toast';
 import { getAuthenticatedApi } from '../../services/api';
 import { getAuthenticatedMediaUrl } from '../../utils/mediaLoader';
@@ -14,6 +15,36 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
     const [uploading, setUploading] = useState(false);
     const [showInviteCode, setShowInviteCode] = useState(false);
     const fileInputRef = useRef(null);
+
+    // Description edit state
+    const [editingDesc, setEditingDesc] = useState(false);
+    const [descValue, setDescValue] = useState(group?.description || '');
+
+    // Online members tracking
+    const [onlineMembers, setOnlineMembers] = useState(new Set());
+
+    useEffect(() => {
+        const socket = getSocket();
+        if (!socket) return;
+
+        const handleStatus = (data) => {
+            setOnlineMembers(prev => {
+                const next = new Set(prev);
+                if (data.status === 'online') {
+                    next.add(data.userId);
+                } else {
+                    next.delete(data.userId);
+                }
+                return next;
+            });
+        };
+
+        socket.on('user:status', handleStatus);
+        // Current user is always online
+        if (user?.id) setOnlineMembers(prev => new Set(prev).add(user.id));
+
+        return () => socket.off('user:status', handleStatus);
+    }, [user?.id]);
 
     // Debug logging
     console.log('[GroupInfoModal] Rendering for group:', group ? { id: group.id || group._id, name: group.name, avatarUrl: group.avatarUrl } : 'null');
@@ -138,6 +169,33 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
         }
     };
 
+    // Demote admin handler
+    const handleDemoteAdmin = async (adminId) => {
+        if (!window.confirm('Demote this admin to a regular member?')) return;
+        try {
+            await groupService.demoteAdmin(groupId, adminId);
+            onGroupUpdated({
+                ...group,
+                admins: (group.admins || []).filter(a => (a._id || a) !== adminId)
+            });
+            toast.success('Admin demoted');
+        } catch (err) {
+            setError(err.message || 'Failed to demote admin');
+        }
+    };
+
+    // Save description handler
+    const handleSaveDescription = async () => {
+        try {
+            await groupService.updateGroup(groupId, { description: descValue.trim() });
+            onGroupUpdated({ ...group, description: descValue.trim() });
+            setEditingDesc(false);
+            toast.success('Description updated');
+        } catch (err) {
+            setError(err.message || 'Failed to update description');
+        }
+    };
+
     const copyInviteCode = () => {
         if (group.inviteCode) {
             navigator.clipboard.writeText(group.inviteCode);
@@ -204,9 +262,38 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
                             )}
                         </div>
                         <h3>{group.name}</h3>
-                        {group.description && <p className="group-description">{group.description}</p>}
+
+                        {/* Editable Description */}
+                        {editingDesc ? (
+                            <div style={{ margin: '8px 0' }}>
+                                <textarea
+                                    value={descValue}
+                                    onChange={(e) => setDescValue(e.target.value)}
+                                    maxLength={500}
+                                    rows={3}
+                                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid rgba(128,128,128,0.3)', background: 'rgba(255,255,255,0.05)', color: 'inherit', resize: 'vertical' }}
+                                />
+                                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                    <button onClick={handleSaveDescription} style={{ padding: '4px 12px', borderRadius: '4px', background: '#3b82f6', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>Save</button>
+                                    <button onClick={() => { setEditingDesc(false); setDescValue(group.description || ''); }} style={{ padding: '4px 12px', borderRadius: '4px', background: 'transparent', color: 'inherit', border: '1px solid rgba(128,128,128,0.3)', cursor: 'pointer', fontSize: '0.8rem' }}>Cancel</button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', margin: '4px 0', width: '100%' }}>
+                                {group.description ? (
+                                    <p className="group-description" style={{ margin: 0, textAlign: 'center' }}>{group.description}</p>
+                                ) : (
+                                    <p className="group-description" style={{ color: '#9ca3af', fontStyle: 'italic', margin: 0, textAlign: 'center' }}>No description</p>
+                                )}
+                                {isAdmin && (
+                                    <button onClick={() => setEditingDesc(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', fontSize: '0.75rem', padding: 0 }}>Edit</button>
+                                )}
+                            </div>
+                        )}
+
                         <div className="group-stats">
                             <span>{group.members?.length || group.memberCount} members</span>
+                            <span style={{ color: '#22c55e' }}>{onlineMembers.size} online</span>
                             <span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
                         </div>
                     </div>
@@ -239,13 +326,16 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
 
                                 return (
                                     <div key={memberId} className="member-item">
-                                        <div className="member-avatar">
+                                        <div className="member-avatar" style={{ position: 'relative' }}>
                                             {member.avatarUrl ? (
                                                 <img src={member.avatarUrl} alt={member.displayName} />
                                             ) : (
                                                 <div className="avatar-placeholder">
                                                     {(member.displayName || member.username || '?').charAt(0).toUpperCase()}
                                                 </div>
+                                            )}
+                                            {onlineMembers.has(memberId) && (
+                                                <div style={{ position: 'absolute', bottom: '0', right: '0', width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e', border: '2px solid var(--modal-bg, #1f2937)' }} />
                                             )}
                                         </div>
                                         <div className="member-info">
@@ -262,6 +352,11 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
                                                 {!memberIsAdmin && (
                                                     <button onClick={() => handlePromoteAdmin(memberId)} title="Make Admin">
                                                         Admin
+                                                    </button>
+                                                )}
+                                                {memberIsAdmin && isCreator && (
+                                                    <button onClick={() => handleDemoteAdmin(memberId)} title="Demote" style={{ color: '#f59e0b' }}>
+                                                        Demote
                                                     </button>
                                                 )}
                                                 <button onClick={() => handleRemoveMember(memberId)} title="Remove">

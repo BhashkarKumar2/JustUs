@@ -432,7 +432,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
               background: activeTab === 'chats'
                 ? (darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)')
                 : 'transparent',
-              color: activeTab === 'chats' ? (darkMode ? '#e5e7eb' : '#667eea') : (darkMode ? '#888' : '#666'),
+              color: activeTab === 'chats' ? (darkMode ? '#e5e7eb' : '#667eea') : (darkMode ? '#9ca3af' : '#6b7280'),
               fontWeight: activeTab === 'chats' ? '600' : '400',
               cursor: 'pointer',
               transition: 'all 0.2s',
@@ -450,7 +450,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
               background: activeTab === 'groups'
                 ? (darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)')
                 : 'transparent',
-              color: activeTab === 'groups' ? (darkMode ? '#e5e7eb' : '#667eea') : (darkMode ? '#888' : '#666'),
+              color: activeTab === 'groups' ? (darkMode ? '#e5e7eb' : '#667eea') : (darkMode ? '#9ca3af' : '#6b7280'),
               fontWeight: activeTab === 'groups' ? '600' : '400',
               cursor: 'pointer',
               transition: 'all 0.2s',
