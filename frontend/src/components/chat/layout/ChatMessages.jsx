@@ -224,6 +224,11 @@ const MessageItem = React.memo(({
             <DocumentMessage message={msg} mine={isOwn} onOpenLightbox={onOpenLightbox} />
           </div>
         )}
+        {(msg.type === 'file' || (msg.type && !['text', 'image', 'audio', 'video', 'document', 'call'].includes(msg.type))) && (
+          <div style={{ paddingLeft: isOwn ? '32px' : '0', paddingRight: isOwn ? '0' : '32px' }}>
+            <DocumentMessage message={msg} mine={isOwn} onOpenLightbox={onOpenLightbox} />
+          </div>
+        )}
 
         {/* Three-dot menu button - responsive sizing */}
         <button

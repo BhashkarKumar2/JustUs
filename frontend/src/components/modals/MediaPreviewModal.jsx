@@ -94,6 +94,7 @@ export default function MediaPreviewModal({
                 <div style={{
                     padding: '20px',
                     display: 'flex',
+                    flexDirection: isImage || isVideo ? 'row' : 'column',
                     justifyContent: 'center',
                     alignItems: 'center',
                     background: isDark ? '#111827' : '#f9fafb',
@@ -107,12 +108,19 @@ export default function MediaPreviewModal({
                     {isVideo && previewUrl && (
                         <video src={previewUrl} controls style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px' }} />
                     )}
-                    {isPdf && (
-                        <div style={{ textAlign: 'center', color: textColor }}>
-                            <svg className="w-16 h-16 mx-auto mb-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                            </svg>
-                            <div style={{ fontWeight: 500 }}>{file.name}</div>
+                    {(!isImage && !isVideo) && (
+                        <div style={{ textAlign: 'center', color: textColor, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            {isPdf ? (
+                                <svg className="w-16 h-16 mx-auto mb-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
+                            ) : (
+                                <svg className="w-16 h-16 mx-auto mb-2 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fillRule="evenodd" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" clipRule="evenodd" />
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                            )}
+                            <div style={{ fontWeight: 500, marginTop: '8px' }}>{file.name}</div>
                             <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>{(file.size / 1024 / 1024).toFixed(2)} MB</div>
                         </div>
                     )}
