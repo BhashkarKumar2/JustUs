@@ -88,15 +88,11 @@ export const smartSearch = async (req, res) => {
 
     res.json(searchResult);
   } catch (error) {
-    console.error('========== SMART SEARCH ERROR ==========');
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('Error details:', error);
-    console.error('========================================');
+    console.error('Smart search error:', error);
     
     res.status(500).json({ 
       message: 'Smart search failed', 
-      error: error.message,
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal Server Error',
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }

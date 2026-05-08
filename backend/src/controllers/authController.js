@@ -39,9 +39,9 @@ export const avatarUpload = multer({
 
 export const avatarUploadMiddleware = avatarUpload.single('avatar');
 
-// Helper to generate 6-digit code
+// Helper to generate 6-digit code using cryptographically secure random numbers
 const generateVerificationCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 1000000).toString();
 };
 
 export const register = async (req, res) => {
@@ -614,7 +614,7 @@ export const forgotPassword = async (req, res) => {
     }
 
     // Generate 6-digit code
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCode = generateVerificationCode();
 
     user.resetPasswordToken = resetCode; // Store directly like verificationCode
     user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour

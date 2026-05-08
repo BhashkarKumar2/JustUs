@@ -92,10 +92,20 @@ export const getMessages = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
     const userId = req.userId;
-    const messageData = req.body;
+    const { receiverId, conversationId, groupId, type, content, encryptionNonce, metadata, replyTo } = req.body;
 
-    messageData.senderId = userId;
-    messageData.timestamp = new Date();
+    const messageData = {
+      senderId: userId,
+      receiverId,
+      conversationId,
+      groupId,
+      type,
+      content,
+      encryptionNonce,
+      metadata,
+      replyTo,
+      timestamp: new Date()
+    };
 
     // Ensure conversation exists
     if (!messageData.conversationId && messageData.receiverId) {

@@ -346,7 +346,13 @@ export const configureSocketIO = (io) => {
         const saved = await message.save();
         const messageDTO = await messageService.convertToDTO(saved);
 
-        io.emit('messages.edited', messageDTO);
+        // Targeted emit to prevent global broadcast of private message edits
+        if (message.groupId) {
+          io.to(`group:${message.groupId}`).emit('messages.edited', messageDTO);
+        } else {
+          io.to(`user:${message.senderId}`).emit('messages.edited', messageDTO);
+          io.to(`user:${message.receiverId}`).emit('messages.edited', messageDTO);
+        }
       } catch (error) {
         console.error('Error handling chat.edit:', error);
         socket.emit('error', { message: 'Failed to edit message' });
@@ -370,7 +376,13 @@ export const configureSocketIO = (io) => {
         const saved = await message.save();
         const messageDTO = await messageService.convertToDTO(saved);
 
-        io.emit('messages.deleted', messageDTO);
+        // Targeted emit to prevent global broadcast of private message deletions
+        if (message.groupId) {
+          io.to(`group:${message.groupId}`).emit('messages.deleted', messageDTO);
+        } else {
+          io.to(`user:${message.senderId}`).emit('messages.deleted', messageDTO);
+          io.to(`user:${message.receiverId}`).emit('messages.deleted', messageDTO);
+        }
       } catch (error) {
         console.error('Error handling chat.delete:', error);
         socket.emit('error', { message: 'Failed to delete message' });
