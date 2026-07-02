@@ -72,11 +72,16 @@ export default defineConfig({
         outDir: 'build', // Output to 'build' to match CRA behavior
         rollupOptions: {
             output: {
-                // Split vendor chunks for better caching
+                // Split vendor chunks for better caching. Heavy, rarely-changing
+                // libraries are isolated so they cache independently of app code
+                // and are pulled out of the large ChatPage bundle.
                 manualChunks: {
                     'vendor-react': ['react', 'react-dom'],
                     'vendor-socket': ['socket.io-client'],
                     'vendor-utils': ['axios', 'react-hot-toast'],
+                    'vendor-crypto': ['tweetnacl', 'tweetnacl-util'],
+                    'vendor-imagecrop': ['react-easy-crop', 'react-image-crop'],
+                    'vendor-virtuoso': ['react-virtuoso'],
                 },
             },
         },

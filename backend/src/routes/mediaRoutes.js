@@ -1,6 +1,7 @@
 import express from 'express';
 import { uploadFile, uploadMiddleware, getFile } from '../controllers/mediaController.js';
 import { authenticateJWT } from '../middleware/auth.js';
+import { uploadLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ const tokenFromQuery = (req, res, next) => {
   next();
 };
 
-router.post('/upload', authenticateJWT, uploadMiddleware, uploadFile);
+router.post('/upload', authenticateJWT, uploadLimiter, uploadMiddleware, uploadFile);
 router.get('/file/:id', tokenFromQuery, authenticateJWT, getFile);
 
 export default router;

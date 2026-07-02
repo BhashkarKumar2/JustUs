@@ -26,7 +26,22 @@ const storage = new GridFsStorage({
   }
 });
 
-const upload = multer({ storage });
+// SECURITY: bound the multipart request structure and size. This mitigates
+// the storage-exhaustion abuse vector (unbounded uploads) and reduces the
+// attack surface of the multipart parser (busboy/dicer). The file size cap is
+// generous so legitimate chat media (images/audio/short video/documents) is
+// unaffected.
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100 MB per file
+    files: 1,                    // one file per upload request
+    parts: 20,                   // files + non-file fields
+    fields: 15,                  // non-file fields
+    fieldNameSize: 200,          // field name length
+    headerPairs: 100             // multipart header pairs (HeaderParser hardening)
+  }
+});
 
 // Middleware export
 export const uploadMiddleware = upload.single('file');
