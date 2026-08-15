@@ -98,6 +98,7 @@ live key.
 | `backend/src/services/turnService.js` | New. Cloudflare credential minting, normalization, caching. |
 | `backend/src/controllers/configController.js` | Rewritten for the three-tier chain; always 200. |
 | `backend/tests/turnService.test.js` | New. Mocked-fetch coverage of both response shapes, all failure modes, and cache behavior. |
+| `backend/tests/configController.test.js` | New. Covers all three tiers, fall-through on Cloudflare failure, and the always-200 contract. |
 | `frontend/src/hooks/useWebRTC.jsx` | Config fetched per call; `createPeerConnection` takes config as a parameter. |
 | `frontend/src/services/config.jsx` | Fallback tagged `turnSource: 'unreachable'`. |
 | `backend/.env.example` | Documents the Cloudflare and static TURN variables. |
@@ -125,8 +126,11 @@ server-side warning — so deploying this branch before creating the key is safe
 
 ## Verification
 
-Unit tests cover the tier selection and cache logic. End-to-end verification
-requires a real Cloudflare key and two devices on different networks:
+Unit tests (27, across two suites) cover the Cloudflare credential path, cache
+behaviour, and the controller's tier selection. They do not prove the Cloudflare
+response shape is handled correctly, because that shape has not been observed
+live. End-to-end verification requires a real Cloudflare key and two devices on
+different networks:
 
 1. Confirm `GET /api/config/webrtc` returns `turnSource: "cloudflare"`.
 2. Place a call between a device on mobile data and a device on Wi-Fi. Carrier
