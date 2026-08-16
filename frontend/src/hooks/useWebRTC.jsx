@@ -30,21 +30,11 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
     const peerConnectionRef = useRef(null);
     const callTimerRef = useRef(null);
     const callStartTimeRef = useRef(null);
-    const rtcConfigRef = useRef(null);
     const pendingCandidates = useRef([]);
 
-    // Fetch config on mount
-    useEffect(() => {
-        const fetchConfig = async () => {
-            try {
-                rtcConfigRef.current = await getWebRTCConfig();
-                console.log(`${logPrefix} WebRTC config loaded`);
-            } catch (err) {
-                console.error(`${logPrefix} Failed to load WebRTC config`, err);
-            }
-        };
-        fetchConfig();
-    }, [logPrefix]);
+    // ICE config is fetched per call rather than on mount. TURN credentials are
+    // short-lived, so a session left open for hours would otherwise hand
+    // RTCPeerConnection expired credentials.
 
     // Timer logic
     const startCallTimer = useCallback(() => {
@@ -146,14 +136,10 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
         pendingCandidates.current = [];
     }, [callState, callDuration, cleanupMedia, closePeerConnection, stopCallTimer, socket, otherUserId, eventPrefix, logPrefix, onCallEnd, type]);
 
-    // Initialize PC
-    const createPeerConnection = useCallback(() => {
-        if (!rtcConfigRef.current) {
-            console.error(`${logPrefix} usage: config not loaded`);
-            return null;
-        }
-
-        const pc = new RTCPeerConnection(rtcConfigRef.current);
+    // Initialize PC. `rtcConfig` is fetched by the caller immediately before
+    // the call so its TURN credentials are always fresh.
+    const createPeerConnection = useCallback((rtcConfig) => {
+        const pc = new RTCPeerConnection(rtcConfig);
 
         pc.onicecandidate = (event) => {
             if (event.candidate && socket) {
@@ -208,11 +194,15 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
                 constraints.video = false;
             }
 
+            // Fresh ICE config (and TURN credentials) for this call.
+            const rtcConfig = await getWebRTCConfig();
+            console.log(`${logPrefix} ICE config loaded, turnSource=`, rtcConfig?.turnSource);
+
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             localStreamRef.current = stream;
             setLocalStream(stream);
 
-            const pc = createPeerConnection();
+            const pc = createPeerConnection(rtcConfig);
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
             const offer = await pc.createOffer();
@@ -249,11 +239,15 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
                 constraints.video = false;
             }
 
+            // Fresh ICE config (and TURN credentials) for this call.
+            const rtcConfig = await getWebRTCConfig();
+            console.log(`${logPrefix} ICE config loaded, turnSource=`, rtcConfig?.turnSource);
+
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             localStreamRef.current = stream;
             setLocalStream(stream);
 
-            const pc = createPeerConnection();
+            const pc = createPeerConnection(rtcConfig);
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
             await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));

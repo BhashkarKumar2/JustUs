@@ -7,12 +7,15 @@ export const getWebRTCConfig = async () => {
     return response.data;
   } catch (error) {
     console.error('Failed to fetch WebRTC config:', error);
-    // Return fallback configuration if backend is unavailable
+    // Return fallback configuration if backend is unavailable.
+    // STUN-only still connects most peers; calls on restrictive networks
+    // (mobile data, corporate NAT) will fail without TURN.
     return {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" }
       ],
-      iceCandidatePoolSize: 10
+      iceCandidatePoolSize: 10,
+      turnSource: 'unreachable'
     };
   }
 };
