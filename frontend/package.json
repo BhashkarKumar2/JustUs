@@ -36,6 +36,7 @@
     "start": "vite",
     "build": "vite build",
     "serve": "vite preview",
+    "test": "node src/utils/mediaConstraints.test.mjs",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0"
   },
   "browserslist": {

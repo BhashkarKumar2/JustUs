@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { getWebRTCConfig } from '../services/config';
+import { buildCallConstraints } from '../utils/mediaConstraints';
 import { toast } from 'react-hot-toast';
 
 /**
@@ -181,18 +182,7 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
         try {
             setCallState('calling');
 
-            let constraints = { audio: true };
-            if (isVideo) {
-                constraints.video = { width: 640, height: 480 };
-            } else {
-                // Audio enhancements for voice calls
-                constraints.audio = {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                };
-                constraints.video = false;
-            }
+            const constraints = buildCallConstraints(type);
 
             // Fresh ICE config (and TURN credentials) for this call.
             const rtcConfig = await getWebRTCConfig();
@@ -226,18 +216,8 @@ export default function useWebRTC({ type, socket, userId, otherUserId, onCallEnd
         try {
             setCallState('connected');
 
-            // Use same constraints as startCall
-            let constraints = { audio: true };
-            if (isVideo) {
-                constraints.video = { width: 640, height: 480 };
-            } else {
-                constraints.audio = {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                };
-                constraints.video = false;
-            }
+            // Same constraints as startCall
+            const constraints = buildCallConstraints(type);
 
             // Fresh ICE config (and TURN credentials) for this call.
             const rtcConfig = await getWebRTCConfig();
