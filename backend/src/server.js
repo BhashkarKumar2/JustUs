@@ -1,4 +1,8 @@
 import 'dotenv/config';
+// Install production-safe console overrides as early as possible (after env is
+// loaded) so verbose/sensitive logs are neutralized in production before any
+// other module runs its startup logging.
+import './utils/logger.js';
 import express from 'express';
 import webpush from 'web-push';
 import { createServer } from 'http';
@@ -175,8 +179,17 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/justus
 const PORT = process.env.PORT || 5000;
 
 console.log(`Starting server in ${NODE_ENV} mode...`);
-console.log("CONNECTION STRING FOR MONGO :  ", MONGODB_URI);
-console.log("=== BACKEND SERVER RESTARTING (Auth CORS Fix): " + new Date().toISOString() + " ===");
+// SECURITY: never log the full connection string (it contains credentials).
+// Log only the host so we can confirm which cluster we're pointed at.
+const redactedMongoHost = (() => {
+  try {
+    return new URL(MONGODB_URI).host || 'unknown-host';
+  } catch {
+    return 'unparseable-uri';
+  }
+})();
+console.log(`MongoDB target host: ${redactedMongoHost}`);
+console.log("=== BACKEND SERVER STARTING: " + new Date().toISOString() + " ===");
 
 // Initialize Web Push
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {

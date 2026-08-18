@@ -1,14 +1,19 @@
 # Use an official Node.js runtime as a parent image
 FROM node:18-alpine
 
+# Run in production mode by default: enables secure cookies, disables verbose
+# logging (see src/utils/logger.js) and localhost CORS fallbacks.
+ENV NODE_ENV=production
+
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if available)
+# Copy package manifests first so dependency install is cached independently
+# of application source changes.
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install --production
+# Deterministic, reproducible install from the lockfile (production deps only).
+RUN npm ci --omit=dev
 
 # Copy the rest of the application code
 COPY . .
