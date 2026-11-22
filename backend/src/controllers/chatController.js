@@ -47,7 +47,8 @@ export const getMessages = async (req, res) => {
 
       let query = {
         conversationId,
-        deleted: false
+        deleted: false,
+        deletedFor: { $ne: userId }
       };
 
       if (beforeStr) {

@@ -10,6 +10,24 @@ import { generateToken } from '../utils/jwtUtil.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
 import RefreshToken from '../models/RefreshToken.js';
 
+// The refresh cookie must reach the API from the frontend's (different) site, which
+// browsers only allow for SameSite=None; Secure cookies. It is scoped to /api/auth so
+// it is sent to nothing but the auth endpoints. Plain-http dev keeps SameSite=Lax.
+const REFRESH_COOKIE_PATH = '/api/auth';
+const REFRESH_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+const refreshCookieOptions = (req) => {
+  const secure = req.secure || process.env.NODE_ENV === 'production';
+  return { httpOnly: true, secure, sameSite: secure ? 'none' : 'lax', path: REFRESH_COOKIE_PATH };
+};
+const setRefreshCookie = (req, res, value) =>
+  res.cookie('refresh-token', value, { ...refreshCookieOptions(req), maxAge: REFRESH_MAX_AGE });
+const clearRefreshCookie = (req, res) => {
+  res.clearCookie('refresh-token', refreshCookieOptions(req));
+  // older sessions stored it at path "/" with SameSite=Lax
+  res.clearCookie('refresh-token', { httpOnly: true, secure: refreshCookieOptions(req).secure, sameSite: 'lax', path: '/' });
+};
+
+
 // Create GridFS storage for avatars
 const avatarStorage = new GridFsStorage({
   db: mongoose.connection,
@@ -186,13 +204,7 @@ export const verifyEmail = async (req, res) => {
       path: '/'
     });
 
-    res.cookie('refresh-token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
-      path: '/'
-    });
+    setRefreshCookie(req, res, refreshToken);
 
     res.json({
       message: 'Email verified successfully',
@@ -296,13 +308,7 @@ export const login = async (req, res) => {
       path: '/'
     });
 
-    res.cookie('refresh-token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
-      path: '/'
-    });
+    setRefreshCookie(req, res, refreshToken);
 
     res.json({
       token,
@@ -329,7 +335,7 @@ export const refreshToken = async (req, res) => {
     }
 
     const tokenDoc = await RefreshToken.findOne({ token: refreshToken }).populate('user');
-    if (!tokenDoc || tokenDoc.revoked || tokenDoc.expiryDate < Date.now()) {
+    if (!tokenDoc || tokenDoc.revoked || !tokenDoc.user || tokenDoc.expiryDate < Date.now()) {
       return res.status(403).json({ message: 'Refresh Token Expired or Invalid' });
     }
 
@@ -356,13 +362,7 @@ export const refreshToken = async (req, res) => {
       path: '/'
     });
 
-    res.cookie('refresh-token', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
-      path: '/'
-    });
+    setRefreshCookie(req, res, newRefreshToken);
 
     res.json({ token: newToken });
   } catch (error) {
@@ -373,7 +373,11 @@ export const refreshToken = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    // Clear the auth cookies
+    // Revoke the refresh token server-side, then clear the auth cookies
+    const presented = req.cookies?.['refresh-token'];
+    if (presented) {
+      await RefreshToken.updateOne({ token: presented }, { revoked: true }).catch(() => {});
+    }
     res.cookie('auth-token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -381,13 +385,7 @@ export const logout = async (req, res) => {
       sameSite: 'lax',
       path: '/'
     });
-    res.cookie('refresh-token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 0,
-      sameSite: 'lax',
-      path: '/'
-    });
+    clearRefreshCookie(req, res);
 
     res.json({ message: 'Logged out successfully' });
   } catch (error) {

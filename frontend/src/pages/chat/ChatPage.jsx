@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-hot-toast';
-import { getConnectionStatus, getSocket } from '../../services/socket';
+import { getConnectionStatus, getSocket, useSocket } from '../../services/socket';
 import ChatHeader from '../../components/chat/layout/ChatHeader';
 import ChatMessages from '../../components/chat/layout/ChatMessages';
 import Lightbox from '../../components/chat/layout/Lightbox';
@@ -105,6 +105,14 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
   const [lightbox, setLightbox] = useState({ visible: false, url: null, type: null, filename: null });
   const [userScrolledUp, setUserScrolledUp] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
+  // Current socket; re-renders when a reconnect replaces it so call hooks follow it
+  const liveSocket = useSocket();
+  // Don't carry a "typing..." label over when switching chats
+  const [typingChatId, setTypingChatId] = useState(otherUserId);
+  if (typingChatId !== otherUserId) {
+    setTypingChatId(otherUserId);
+    setTypingUser(null);
+  }
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -252,7 +260,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
     localStreamRef: voiceLocalStreamRef,
     remoteStreamRef: voiceRemoteStreamRef
   } = useVoiceCall({
-    socket: getSocket(),
+    socket: liveSocket,
     userId: user.id,
     otherUserId: otherUserId,
     otherUser: otherUser,
@@ -277,7 +285,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
     localStreamRef: videoLocalStreamRef,
     remoteStreamRef: videoRemoteStreamRef
   } = useVideoCall({
-    socket: getSocket(),
+    socket: liveSocket,
     userId: user.id,
     otherUserId: otherUserId,
     otherUser: otherUser,
@@ -298,6 +306,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
     connectedRef,
     typingTimeoutRef,
     encryption, // Pass encryption for socket message decryption
+    activeChatUserId: otherUserId,
     onUserStatusChange: (userId, online) => {
       if (userId === otherUserId) setOtherUserOnline(online);
     }
@@ -387,11 +396,13 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
   const wallpaperIsGradient = wallpaperPreview.sourceType === 'preset';
   const wallpaperActive = wallpaperSettings.sourceType !== 'none' && Boolean(resolvedWallpaperUrl);
 
-  const onDelete = (id) => {
-    // Basic delete handler - in a full refactor this could be in a hook too
+  const onDelete = (messageOrId) => {
+    // ChatMessages passes the whole message; accept a bare id too
+    const id = typeof messageOrId === 'object' && messageOrId ? (messageOrId.id || messageOrId._id) : messageOrId;
+    if (!id) return;
     const socket = getSocket();
     if (socket) {
-      socket.emit('chat.delete', { messageId: id, conversationId, userId: user.id });
+      socket.emit('chat.delete', { id, conversationId });
     }
     setMessages(prev => prev.filter(m => m.id !== id && m._id !== id));
   };

@@ -169,6 +169,7 @@ const io = new Server(httpServer, {
 });
 
 configureSocketIO(io);
+app.set('io', io); // lets HTTP controllers update socket rooms (group membership)
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/justus';

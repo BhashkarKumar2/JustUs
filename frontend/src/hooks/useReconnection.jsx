@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getSocket } from '../services/socket';
+import { getSocket, useSocket } from '../services/socket';
 import CryptoService from '../services/crypto';
 
 /**
@@ -13,11 +13,12 @@ export const useReconnection = ({ userId, otherUserId, conversationId, messages,
     const lastMessageIdRef = useRef(null);
     const wasDisconnectedRef = useRef(false); // CRITICAL: Track if we actually disconnected
     const currentConversationRef = useRef(conversationId); // CRITICAL: Track current conversation
+    // Follow the live socket: reconnects replace the object, and listeners left on
+    // the old one would never hear the new one's 'connect' (stuck "Disconnected").
+    const socket = useSocket();
 
     useEffect(() => {
         if (!userId) return;
-
-        const socket = getSocket();
         if (!socket) return;
 
         // CRITICAL: Update conversation ref when it changes
@@ -34,6 +35,7 @@ export const useReconnection = ({ userId, otherUserId, conversationId, messages,
         // Handle disconnect
         const handleDisconnect = (reason) => {
             console.log('[Reconnection] Disconnected:', reason);
+            if (getSocket() !== socket) return; // replaced on purpose; the new one reports itself
             setConnectionStatus('disconnected');
             wasDisconnectedRef.current = true; // Mark that we disconnected
 
@@ -160,10 +162,11 @@ export const useReconnection = ({ userId, otherUserId, conversationId, messages,
             socket.off('message:sync_response', handleSyncResponse);
             socket.off('error:rate_limit', handleRateLimitError);
         };
-    }, [userId, otherUserId, conversationId, messages, setMessages]);
+    }, [socket, userId, otherUserId, conversationId, messages, setMessages]);
 
     return {
-        connectionStatus,
+        // A live, connected socket wins over a stale event-derived status
+        connectionStatus: socket?.connected ? 'connected' : connectionStatus,
         showRateLimitWarning,
         rateLimitRetryAfter
     };

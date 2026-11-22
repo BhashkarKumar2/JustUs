@@ -28,7 +28,11 @@ const processQueue = (error, token = null) => {
 const responseInterceptor = (apiInstance) => async (error) => {
     const originalRequest = error.config;
 
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+    // A 401 from the auth endpoints themselves (e.g. wrong password on login) is an
+    // answer, not an expired session: don't try to refresh or force a logout.
+    const isAuthEndpoint = /\/api\/auth\/(login|register|verify|resend|forgot|reset|refresh-token|logout)/.test(originalRequest?.url || '');
+
+    if (error.response && error.response.status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
         if (isRefreshing) {
             return new Promise(function (resolve, reject) {
                 failedQueue.push({ resolve, reject });

@@ -15,7 +15,8 @@ export default function useChatSocket({
   connectedRef,
   typingTimeoutRef,
   onUserStatusChange,
-  encryption // Added for E2EE support
+  encryption, // Added for E2EE support
+  activeChatUserId // the contact whose chat is open (typing indicator is scoped to it)
 }) {
   const healthIntervalRef = useRef(null);
 
@@ -24,6 +25,7 @@ export default function useChatSocket({
   const setMessagesRef = useRef(setMessages);
   const setTypingUserRef = useRef(setTypingUser);
   const encryptionRef = useRef(encryption);
+  const activeChatUserIdRef = useRef(activeChatUserId);
   const reconnectRef = useRef(null);
   const isAuthErrorRef = useRef(false);
 
@@ -49,9 +51,9 @@ export default function useChatSocket({
 
     // Typing indicator
     if (message.type === 'typing') {
-      if (message.senderId !== userId) {
+      if (message.senderId !== userId && message.senderId === activeChatUserIdRef.current) {
         const sender = availableUsersRef.current.find(u => u.id === message.senderId);
-        setTypingUserRef.current(sender ? (sender.displayName || sender.username) : 'Someone');
+        setTypingUserRef.current(sender ? (sender.displayName || sender.username) : (message.username || 'Someone'));
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => setTypingUserRef.current(null), 3000);
       }
@@ -183,7 +185,8 @@ export default function useChatSocket({
     setTypingUserRef.current = setTypingUser;
     encryptionRef.current = encryption;
     reconnectRef.current = reconnectWebSocket;
-  }, [availableUsers, setMessages, setTypingUser, encryption, reconnectWebSocket]);
+    activeChatUserIdRef.current = activeChatUserId;
+  }, [availableUsers, setMessages, setTypingUser, encryption, reconnectWebSocket, activeChatUserId]);
 
   useEffect(() => {
     if (!token) return;

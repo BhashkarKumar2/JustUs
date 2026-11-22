@@ -63,6 +63,12 @@ export const configureSocketIO = (io) => {
     // Join user-specific room
     socket.join(`user:${socket.userId}`);
 
+    // Join every group room this user belongs to, so group messages (and desktop
+    // notifications) arrive without opening each group, and survive reconnects.
+    Group.find({ members: socket.userId }, { _id: 1 }).lean()
+      .then(groups => { if (socket.connected) groups.forEach(g => socket.join(`group:${g._id}`)); })
+      .catch(err => console.error('Failed to join group rooms:', err.message));
+
     // Broadcast user online status to all connected users
     socket.broadcast.emit('user:status', {
       userId: socket.userId,
@@ -360,15 +366,23 @@ export const configureSocketIO = (io) => {
     });
 
     // Handle chat.delete
+    // Sender: deletes for everyone. Receiver: hides the message for themselves only.
     socket.on('chat.delete', async (incoming) => {
       try {
-        const message = await Message.findById(incoming.id);
+        const messageId = incoming?.id || incoming?.messageId;
+        if (!messageId || !mongoose.Types.ObjectId.isValid(String(messageId))) return;
+        const message = await Message.findById(String(messageId));
         if (!message) return;
 
-        // SECURITY: Ownership check - only sender can delete their messages
         if (message.senderId !== socket.userId) {
-          console.error(`[SECURITY] User ${socket.userId} attempted to delete message owned by ${message.senderId}`);
-          socket.emit('error', { message: 'Unauthorized: You can only delete your own messages' });
+          // Only a participant (receiver) may hide a direct message for themselves
+          if (message.groupId || message.receiverId !== socket.userId) {
+            console.error(`[SECURITY] User ${socket.userId} attempted to delete message owned by ${message.senderId}`);
+            socket.emit('error', { message: 'Unauthorized: You can only delete your own messages' });
+            return;
+          }
+          await Message.updateOne({ _id: message._id }, { $addToSet: { deletedFor: socket.userId } });
+          io.to(`user:${socket.userId}`).emit('messages.deleted', { id: message._id.toString(), conversationId: message.conversationId, forMe: true });
           return;
         }
 
