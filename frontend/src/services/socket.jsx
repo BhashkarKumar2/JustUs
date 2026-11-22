@@ -35,6 +35,11 @@ export function useSocket() {
 }
 
 export function connectSocket(token, onMessage, onConnected, handlers = {}) {
+  // Still reconnecting by itself: replacing it would only restart the attempt.
+  if (socket && !socket.connected && socket.active) {
+    return;
+  }
+
   if (socket && socket.connected) {
     console.log('WebSocket already connected');
     // Call onConnected immediately if we're already connected
@@ -60,13 +65,18 @@ export function connectSocket(token, onMessage, onConnected, handlers = {}) {
 
   // Create Socket.IO connection
   const thisSocket = io(WS_URL, {
-    auth: {
-      token: token
-    },
+    // Evaluated on every (re)connection attempt, so retries and Socket.IO's own
+    // auto-reconnect always use the latest token: a token refreshed while the
+    // connection was down must not be overtaken by a retry holding the old one.
+    auth: (cb) => cb({ token: localStorage.getItem('token') || token }),
     transports: ['websocket', 'polling'],
+    // Socket.IO owns transport reconnects (network drops, server restarts) and keeps
+    // trying; the app only steps in when the server refuses the connection (e.g.
+    // expired token), which ends Socket.IO's own retries (socket.active === false).
     reconnection: true,
-    reconnectionDelay: 5000,
-    reconnectionAttempts: 5
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: Infinity
   });
   setCurrentSocket(thisSocket);
   const isCurrent = () => socket === thisSocket;
@@ -326,7 +336,7 @@ export function disconnectSocket() {
 export function getConnectionStatus() {
   if (!socket) return 'disconnected';
   if (socket.connected) return 'connected';
-  if (socket.connecting) return 'connecting';
+  if (socket.active) return 'connecting'; // Socket.IO is retrying on its own
   return 'disconnected';
 }
 

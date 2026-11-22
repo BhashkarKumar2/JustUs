@@ -13,6 +13,29 @@ const api = axios.create({
 let isRefreshing = false;
 let failedQueue = [];
 
+// One in-flight refresh shared by HTTP retries and the socket (avoids racing two
+// rotations of the same refresh token, where the loser would be rejected).
+let refreshPromise = null;
+export function refreshAccessToken() {
+    if (!refreshPromise) {
+        refreshPromise = axios.post(`${API_URL}/api/auth/refresh-token`, {}, { withCredentials: true })
+            .then(({ data }) => {
+                setAuthToken(data.token);
+                return data.token;
+            })
+            .finally(() => { refreshPromise = null; });
+    }
+    return refreshPromise;
+}
+
+export function forceLogout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    delete api.defaults.headers.common['Authorization'];
+    window.location.href = '/';
+}
+
 const processQueue = (error, token = null) => {
     failedQueue.forEach(prom => {
         if (error) {
@@ -48,16 +71,8 @@ const responseInterceptor = (apiInstance) => async (error) => {
         isRefreshing = true;
 
         try {
-            // Call refresh endpoint using raw axios to avoid interceptors
             console.log('Refreshing token...');
-            const { data } = await axios.post(`${API_URL}/api/auth/refresh-token`, {}, {
-                withCredentials: true
-            });
-
-            const { token } = data;
-
-            // Update token
-            setAuthToken(token);
+            const token = await refreshAccessToken();
 
             // Update pending requests
             originalRequest.headers['Authorization'] = 'Bearer ' + token;
@@ -69,11 +84,7 @@ const responseInterceptor = (apiInstance) => async (error) => {
 
             // Logout
             console.log('Refresh failed, logging out');
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('username');
-            delete api.defaults.headers.common['Authorization'];
-            window.location.href = '/signin';
+            forceLogout();
 
             return Promise.reject(err);
         } finally {
