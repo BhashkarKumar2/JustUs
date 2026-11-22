@@ -17,7 +17,7 @@ export default defineConfig({
             strategies: 'injectManifest',
             srcDir: 'src',
             filename: 'sw.js',
-            registerType: 'autoUpdate',
+            registerType: 'prompt', // ask before reloading (never drop a call); see sw.js
             includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png', 'robots.txt'],
             manifest: {
                 name: 'JustUs - Secure Chat',

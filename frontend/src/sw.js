@@ -3,6 +3,13 @@ import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
+// The "New content available. Reload?" prompt (index.jsx -> updateSW(true)) asks the
+// waiting worker to take over. Without this handler the new version only activated
+// once every tab was closed, which the desktop app (hides to tray) never does.
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('push', (event) => {
     const data = event.data ? event.data.json() : {};
     const options = {
