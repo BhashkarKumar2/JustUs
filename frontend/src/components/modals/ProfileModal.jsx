@@ -3,6 +3,7 @@ import { uploadAvatar, getAvatarUrl } from '../../services/avatarService';
 import { updateProfile } from '../../services/auth';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { isDesktopApp } from '../../utils/desktopNotify';
 
 // Utility to convert VAPID key
 function urlBase64ToUint8Array(base64String) {
@@ -362,17 +363,17 @@ export default function ProfileModal({ show, onClose, user, onAvatarUpdate, onPr
             <label className={`block text-sm font-medium ${styles.textSecondary} mb-2`}>Notifications</label>
             <div className={`p-4 rounded-lg flex items-center justify-between ${styles.notificationBg} border ${styles.inputBorder}`}>
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${isSubscribed ? 'bg-green-100 text-green-600' : (isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500')}`}>
+                <div className={`p-2 rounded-full ${(isSubscribed || isDesktopApp()) ? 'bg-green-100 text-green-600' : (isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500')}`}>
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                   </svg>
                 </div>
                 <div>
-                  <p className={`text-sm font-medium ${styles.textPrimary}`}>Push Notifications</p>
-                  <p className={`text-xs ${styles.textSecondary}`}>{isSubscribed ? 'On' : 'Off'}</p>
+                  <p className={`text-sm font-medium ${styles.textPrimary}`}>{isDesktopApp() ? 'Desktop Notifications' : 'Push Notifications'}</p>
+                  <p className={`text-xs ${styles.textSecondary}`}>{isDesktopApp() ? 'On — built into the JustUs app' : (isSubscribed ? 'On' : 'Off')}</p>
                 </div>
               </div>
-              {!isSubscribed ? (
+              {isDesktopApp() ? null : !isSubscribed ? (
                 <button
                   onClick={subscribeUser}
                   disabled={subscribing}

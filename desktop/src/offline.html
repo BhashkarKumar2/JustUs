@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' file:; style-src 'unsafe-inline'; script-src 'unsafe-inline'" />
+  <title>JustUs — offline</title>
+  <style>
+    html, body { margin: 0; height: 100%; }
+    body {
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      background: linear-gradient(160deg, #1e293b, #05070a); color: #eee;
+      font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+    }
+    img { width: 72px; height: 72px; border-radius: 16px; opacity: .9; }
+    h1 { font-size: 20px; font-weight: 600; margin: 18px 0 6px; }
+    p { margin: 0 0 20px; color: #b9aed1; font-size: 14px; }
+    small { display: block; margin-top: 14px; color: #7d7296; font-size: 12px; }
+    button {
+      background: #6366f1; color: #fff; border: 0; border-radius: 8px;
+      padding: 10px 22px; font-size: 14px; cursor: pointer;
+    }
+    button:hover { background: #4f46e5; }
+  </style>
+</head>
+<body>
+  <div>
+    <img src="tray.png" alt="" />
+    <h1>Can't reach JustUs</h1>
+    <p>Check your internet connection. Retrying automatically…</p>
+    <button id="retry">Retry now</button>
+    <small id="reason"></small>
+  </div>
+  <script>
+    const reason = new URLSearchParams(location.search).get('reason');
+    if (reason) document.getElementById('reason').textContent = reason;
+    const retry = () => window.justusDesktop && window.justusDesktop.retry();
+    document.getElementById('retry').addEventListener('click', retry);
+    window.addEventListener('online', retry);
+    setTimeout(retry, 15000);
+  </script>
+</body>
+</html>
