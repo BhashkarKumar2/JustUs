@@ -1,0 +1,42 @@
+{
+  "name": "justus-desktop",
+  "productName": "JustUs",
+  "version": "1.0.0",
+  "description": "JustUs desktop app for Windows",
+  "main": "src/main.js",
+  "private": true,
+  "author": "Bhashkar Kumar",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis",
+    "pack": "electron-builder --win dir"
+  },
+  "build": {
+    "appId": "app.justus.desktop",
+    "productName": "JustUs",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "build/icon.ico",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "JustUs"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
+  }
+}

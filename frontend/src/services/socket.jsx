@@ -1,5 +1,6 @@
 import { io } from 'socket.io-client';
 import CryptoService from './crypto';
+import { notifyDesktop, getUserIdFromToken } from '../utils/desktopNotify';
 
 // Use environment variable for WebSocket URL, fallback to localhost. In production (served by backend), use relative (undefined).
 // Use environment variable for WebSocket URL, fallback to API URL or localhost
@@ -59,6 +60,15 @@ export function connectSocket(token, onMessage, onConnected, handlers = {}) {
     // console.log('Received message:', data);
     if (onMessage) onMessage(data);
   });
+
+  // Desktop app only (no-op in browsers): native toasts + taskbar badge for messages and calls
+  const myUserId = getUserIdFromToken(token);
+  socket.on('message', (data) => notifyDesktop('message', data, myUserId));
+  socket.on('group.message', (data) => notifyDesktop('group.message', data, myUserId));
+  socket.on('call.offer', (data) => notifyDesktop('call.offer', data, myUserId));
+  socket.on('video-call.offer', (data) => notifyDesktop('video-call.offer', data, myUserId));
+  socket.on('call.end', (data) => notifyDesktop('call.end', data, myUserId));
+  socket.on('video-call.end', (data) => notifyDesktop('video-call.end', data, myUserId));
 
   // Listen for edited messages
   socket.on('messages.edited', (data) => {
