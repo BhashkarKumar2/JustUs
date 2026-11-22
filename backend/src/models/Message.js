@@ -92,6 +92,11 @@ const messageSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // "Delete for me": users who hid this message from their own view
+  deletedFor: {
+    type: [String],
+    default: undefined
+  },
   // Read receipts
   delivered: {
     type: Boolean,

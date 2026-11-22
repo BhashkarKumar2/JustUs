@@ -10,7 +10,7 @@ import './GroupChatPage.css';
 import ComposeBar from '../../components/chat/input/ComposeBar';
 import useImageUpload from '../../hooks/useImageUpload';
 import useMessageSender from '../../hooks/useMessageSender'; // For sound effects/text logic if needed
-import { getSocket } from '../../services/socket';
+import { useSocket } from '../../services/socket';
 import { toast } from 'react-hot-toast';
 import { getAuthenticatedMediaUrl } from '../../utils/mediaLoader';
 
@@ -105,8 +105,9 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => {
 
     // Sync real-time reaction & read updates into loadedMessages
     // (socket events update socketMessages, but most messages live in loadedMessages)
+    const liveSocket = useSocket(); // follows reconnects
     useEffect(() => {
-        const socket = getSocket();
+        const socket = liveSocket;
         if (!socket || !groupId) return;
 
         const handleReacted = (data) => {
@@ -141,7 +142,7 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => {
             socket.off('group.message_reacted', handleReacted);
             socket.off('group.message_read', handleRead);
         };
-    }, [groupId, setLoadedMessages]);
+    }, [groupId, setLoadedMessages, liveSocket]);
 
     // Combine loaded messages with socket messages
     const allMessages = [...loadedMessages];

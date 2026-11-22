@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getSocket } from '../../services/socket';
+import { useSocket } from '../../services/socket';
 import { toast } from 'react-hot-toast';
 import { getAuthenticatedApi } from '../../services/api';
 import { getAuthenticatedMediaUrl } from '../../utils/mediaLoader';
@@ -23,8 +23,9 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
     // Online members tracking
     const [onlineMembers, setOnlineMembers] = useState(new Set());
 
+    const liveSocket = useSocket(); // follows reconnects
     useEffect(() => {
-        const socket = getSocket();
+        const socket = liveSocket;
         if (!socket) return;
 
         const handleStatus = (data) => {
@@ -44,7 +45,7 @@ const GroupInfoModal = ({ group, user, onClose, onGroupUpdated }) => {
         if (user?.id) setOnlineMembers(prev => new Set(prev).add(user.id));
 
         return () => socket.off('user:status', handleStatus);
-    }, [user?.id]);
+    }, [user?.id, liveSocket]);
 
     // Debug logging
     console.log('[GroupInfoModal] Rendering for group:', group ? { id: group.id || group._id, name: group.name, avatarUrl: group.avatarUrl } : 'null');

@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import { io } from 'socket.io-client';
 import CryptoService from './crypto';
 import { notifyDesktop, getUserIdFromToken } from '../utils/desktopNotify';
@@ -16,7 +17,29 @@ if (typeof window !== 'undefined' && window.location.protocol === 'https:' && WS
 let socket = null;
 let userPublicKeys = {}; // Cache of userId -> publicKey
 
+// connectSocket() replaces the socket object on every reconnect. Anything that keeps
+// listeners on it must follow the current one, or it ends up listening to (and
+// emitting into) a dead socket: stale "Disconnected" banners, calls that never ring.
+const socketSubscribers = new Set();
+function setCurrentSocket(next) {
+  socket = next;
+  socketSubscribers.forEach(fn => fn());
+}
+function subscribeSocket(fn) {
+  socketSubscribers.add(fn);
+  return () => socketSubscribers.delete(fn);
+}
+/** React hook: the current Socket.IO instance; re-renders when it is replaced. */
+export function useSocket() {
+  return useSyncExternalStore(subscribeSocket, getSocket, getSocket);
+}
+
 export function connectSocket(token, onMessage, onConnected, handlers = {}) {
+  // Still reconnecting by itself: replacing it would only restart the attempt.
+  if (socket && !socket.connected && socket.active) {
+    return;
+  }
+
   if (socket && socket.connected) {
     console.log('WebSocket already connected');
     // Call onConnected immediately if we're already connected
@@ -28,8 +51,10 @@ export function connectSocket(token, onMessage, onConnected, handlers = {}) {
 
   // Clean up any existing socket before creating a new one
   if (socket) {
+    const old = socket;
+    socket = null; // detach first so its disconnect event isn't treated as ours
     try {
-      socket.disconnect();
+      old.disconnect();
     } catch (e) {
       console.log('Error disconnecting existing socket:', e);
     }
@@ -39,19 +64,27 @@ export function connectSocket(token, onMessage, onConnected, handlers = {}) {
   console.log('Token:', token ? 'present' : 'missing');
 
   // Create Socket.IO connection
-  socket = io(WS_URL, {
-    auth: {
-      token: token
-    },
+  const thisSocket = io(WS_URL, {
+    // Evaluated on every (re)connection attempt, so retries and Socket.IO's own
+    // auto-reconnect always use the latest token: a token refreshed while the
+    // connection was down must not be overtaken by a retry holding the old one.
+    auth: (cb) => cb({ token: localStorage.getItem('token') || token }),
     transports: ['websocket', 'polling'],
+    // Socket.IO owns transport reconnects (network drops, server restarts) and keeps
+    // trying; the app only steps in when the server refuses the connection (e.g.
+    // expired token), which ends Socket.IO's own retries (socket.active === false).
     reconnection: true,
-    reconnectionDelay: 5000,
-    reconnectionAttempts: 5
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: Infinity
   });
+  setCurrentSocket(thisSocket);
+  const isCurrent = () => socket === thisSocket;
 
   // Connection event
   socket.on('connect', () => {
     console.log('Socket.IO connected');
+    if (!isCurrent()) return;
     if (onConnected) onConnected();
   });
 
@@ -90,8 +123,9 @@ export function connectSocket(token, onMessage, onConnected, handlers = {}) {
 
   // Listen for typing events
   socket.on('typing', (data) => {
-    // console.log('User typing:', data);
+    // Falls back to the main message handler, which renders type === 'typing'
     if (handlers.onTyping) handlers.onTyping(data);
+    else if (onMessage) onMessage({ ...data, type: 'typing' });
   });
 
   // Listen for user status (online/offline)
@@ -116,6 +150,7 @@ export function connectSocket(token, onMessage, onConnected, handlers = {}) {
   // Disconnect event
   socket.on('disconnect', (reason) => {
     console.log('Socket.IO disconnected:', reason);
+    if (!isCurrent()) return; // an old socket we replaced on purpose
     if (handlers.onConnectionLost) {
       setTimeout(() => {
         handlers.onConnectionLost();
@@ -126,6 +161,7 @@ export function connectSocket(token, onMessage, onConnected, handlers = {}) {
   // Connection error
   socket.on('connect_error', (error) => {
     console.error('Socket.IO connection error:', error);
+    if (!isCurrent()) return;
     // Check if it's an authentication error
     const isAuthError = error.message.includes('token') ||
       error.message.includes('jwt') ||
@@ -290,7 +326,7 @@ export function disconnectSocket() {
     try {
       console.log('Disconnecting Socket.IO...');
       socket.disconnect();
-      socket = null;
+      setCurrentSocket(null);
     } catch (e) {
       console.error('Error disconnecting Socket.IO:', e);
     }
@@ -300,7 +336,7 @@ export function disconnectSocket() {
 export function getConnectionStatus() {
   if (!socket) return 'disconnected';
   if (socket.connected) return 'connected';
-  if (socket.connecting) return 'connecting';
+  if (socket.active) return 'connecting'; // Socket.IO is retrying on its own
   return 'disconnected';
 }
 

@@ -2,6 +2,21 @@ import Group from '../models/Group.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
 
+// Keep live sockets' group rooms in sync with membership changes. Every member's
+// sockets are joined to all their group rooms on connect (see socketHandler).
+const groupRoom = (groupId) => `group:${groupId}`;
+const joinGroupRoom = (req, userIds, groupId) => {
+    const io = req.app.get('io');
+    if (!io) return;
+    for (const uid of userIds) io.in(`user:${uid}`).socketsJoin(groupRoom(groupId));
+};
+const leaveGroupRoom = (req, userIds, groupId) => {
+    const io = req.app.get('io');
+    if (!io) return;
+    for (const uid of userIds) io.in(`user:${uid}`).socketsLeave(groupRoom(groupId));
+};
+
+
 /**
  * Group Controller - Handles all group-related API requests
  */
@@ -48,6 +63,7 @@ export const createGroup = async (req, res) => {
         });
 
         await group.save();
+        joinGroupRoom(req, uniqueMembers.map(String), group._id.toString());
 
         // Populate creator info for response
         await group.populate('creator', 'username displayName avatarUrl');
@@ -234,6 +250,7 @@ export const deleteGroup = async (req, res) => {
 
         // Delete the group
         await Group.findByIdAndDelete(id);
+        req.app.get('io')?.socketsLeave(groupRoom(id));
 
         console.log(`Group deleted: ${group.name} by user ${userId}`);
         res.json({ success: true, message: 'Group deleted successfully' });
@@ -282,6 +299,7 @@ export const addMembers = async (req, res) => {
 
         group.members.push(...validIds);
         await group.save();
+        joinGroupRoom(req, validIds.map(String), id);
         await group.populate('members', 'username displayName avatarUrl');
 
         console.log(`Added ${validIds.length} members to group ${group.name}`);
@@ -323,6 +341,7 @@ export const removeMember = async (req, res) => {
         group.members = group.members.filter(m => m.toString() !== memberId);
         group.admins = group.admins.filter(a => a.toString() !== memberId);
         await group.save();
+        leaveGroupRoom(req, [memberId], id);
 
         console.log(`Member ${memberId} removed from group ${group.name}`);
         res.json({ success: true, message: 'Member removed successfully' });
@@ -359,6 +378,7 @@ export const leaveGroup = async (req, res) => {
         group.members = group.members.filter(m => m.toString() !== userId);
         group.admins = group.admins.filter(a => a.toString() !== userId);
         await group.save();
+        leaveGroupRoom(req, [userId], id);
 
         console.log(`User ${userId} left group ${group.name}`);
         res.json({ success: true, message: 'You have left the group' });
@@ -521,6 +541,7 @@ export const joinViaInvite = async (req, res) => {
 
         group.members.push(userId);
         await group.save();
+        joinGroupRoom(req, [userId], group._id.toString());
         await group.populate('members', 'username displayName avatarUrl');
 
         console.log(`User ${userId} joined group ${group.name} via invite`);

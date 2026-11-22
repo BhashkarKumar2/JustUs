@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { connectSocket, disconnectSocket, getConnectionStatus, sendSocketMessage } from '../services/socket';
+import { connectSocket, disconnectSocket, getConnectionStatus, getSocket, sendSocketMessage } from '../services/socket';
+import { refreshAccessToken, forceLogout } from '../services/api';
+
+// Only rebuild the socket when Socket.IO has given up (server refused it / none exists);
+// while it is still retrying on its own, a new socket would just restart the attempt.
+const socketNeedsRebuild = () => { const s = getSocket(); return !s || (!s.connected && !s.active); };
 import { mergeMessages } from '../utils/chatUtils';
 
 export default function useChatSocket({
@@ -15,7 +20,8 @@ export default function useChatSocket({
   connectedRef,
   typingTimeoutRef,
   onUserStatusChange,
-  encryption // Added for E2EE support
+  encryption, // Added for E2EE support
+  activeChatUserId // the contact whose chat is open (typing indicator is scoped to it)
 }) {
   const healthIntervalRef = useRef(null);
 
@@ -24,6 +30,7 @@ export default function useChatSocket({
   const setMessagesRef = useRef(setMessages);
   const setTypingUserRef = useRef(setTypingUser);
   const encryptionRef = useRef(encryption);
+  const activeChatUserIdRef = useRef(activeChatUserId);
   const reconnectRef = useRef(null);
   const isAuthErrorRef = useRef(false);
 
@@ -49,9 +56,9 @@ export default function useChatSocket({
 
     // Typing indicator
     if (message.type === 'typing') {
-      if (message.senderId !== userId) {
+      if (message.senderId !== userId && message.senderId === activeChatUserIdRef.current) {
         const sender = availableUsersRef.current.find(u => u.id === message.senderId);
-        setTypingUserRef.current(sender ? (sender.displayName || sender.username) : 'Someone');
+        setTypingUserRef.current(sender ? (sender.displayName || sender.username) : (message.username || 'Someone'));
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => setTypingUserRef.current(null), 3000);
       }
@@ -148,7 +155,16 @@ export default function useChatSocket({
                 isAuthErrorRef.current = true;
                 setIsReconnecting(false);
                 setReconnectAttempts(0);
-                // Optionally trigger a logout or token refresh action here if passed as prop
+                // Usually the 15-min access token expired while the socket was down.
+                // Refresh it: success fires 'auth:token-changed', which reconnects below.
+                refreshAccessToken().catch((err) => {
+                  const status = err?.response?.status;
+                  if (status === 401 || status === 403) {
+                    forceLogout(); // refresh token expired/revoked: sign in again
+                  } else {
+                    isAuthErrorRef.current = false; // network trouble: let the health check retry
+                  }
+                });
               },
               onConnectionLost: (error) => {
                 connectedRef.current = false;
@@ -157,7 +173,7 @@ export default function useChatSocket({
                 if (error && (error.message || '').includes('jwt expired')) {
                   return; // Stop reconnecting
                 }
-                setTimeout(() => { if (!connectedRef.current) reconnectWebSocket(); }, 2000);
+                setTimeout(() => { if (!connectedRef.current && socketNeedsRebuild()) reconnectWebSocket(); }, 2000);
               }
             }
           );
@@ -183,7 +199,8 @@ export default function useChatSocket({
     setTypingUserRef.current = setTypingUser;
     encryptionRef.current = encryption;
     reconnectRef.current = reconnectWebSocket;
-  }, [availableUsers, setMessages, setTypingUser, encryption, reconnectWebSocket]);
+    activeChatUserIdRef.current = activeChatUserId;
+  }, [availableUsers, setMessages, setTypingUser, encryption, reconnectWebSocket, activeChatUserId]);
 
   useEffect(() => {
     if (!token) return;
@@ -271,7 +288,7 @@ export default function useChatSocket({
               connectedRef.current = false;
               setConnectionStatus('disconnected');
               if (error && (error.message || '').includes('jwt expired')) return;
-              setTimeout(() => { if (!connectedRef.current) reconnectWebSocket(); }, 2000);
+              setTimeout(() => { if (!connectedRef.current && socketNeedsRebuild()) reconnectWebSocket(); }, 2000);
             }
           }
         );

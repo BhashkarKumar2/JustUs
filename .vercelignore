@@ -1,0 +1,2 @@
+# Vercel only builds frontend/; keep the Electron app (installers, electron binary) out of uploads
+desktop/

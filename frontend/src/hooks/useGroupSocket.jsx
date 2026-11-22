@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getSocket } from '../services/socket';
+import { getSocket, useSocket } from '../services/socket';
 
 /**
  * Hook for managing group socket events
@@ -10,9 +10,11 @@ export const useGroupSocket = (groupId, user) => {
     const typingTimeoutRef = useRef(new Map());
 
     const [connectionStatus, setConnectionStatus] = useState('connected');
+    // Follow the live socket (reconnects replace it) so listeners and the room join stay attached
+    const liveSocket = useSocket();
 
     useEffect(() => {
-        const socket = getSocket();
+        const socket = liveSocket;
         if (!socket) {
             setConnectionStatus('disconnected');
             return;
@@ -34,12 +36,12 @@ export const useGroupSocket = (groupId, user) => {
             socket.off('disconnect', handleDisconnect);
             socket.off('reconnect_attempt', handleReconnectAttempt);
         };
-    }, []);
+    }, [liveSocket]);
 
     useEffect(() => {
         if (!groupId || !user?.id) return;
 
-        const socket = getSocket();
+        const socket = liveSocket;
         if (!socket) return;
 
         // Capture ref value for cleanup
@@ -134,7 +136,6 @@ export const useGroupSocket = (groupId, user) => {
         socket.on('group.message_reacted', handleMessageReacted);
 
         return () => {
-            socket.emit('group.leave', { groupId });
             socket.off('group.message', handleGroupMessage);
             socket.off('group.typing', handleGroupTyping);
             socket.off('group.message_deleted', handleMessageDeleted);
@@ -145,7 +146,7 @@ export const useGroupSocket = (groupId, user) => {
             timeoutMapRef.forEach(timeout => clearTimeout(timeout));
             timeoutMapRef.clear();
         };
-    }, [groupId, user]);
+    }, [groupId, user, liveSocket]);
 
     // Send message to group
     const sendMessage = useCallback((content, type = 'text', options = {}) => {
