@@ -1,5 +1,5 @@
 // The deployed JustUs frontend this app wraps. Override with the JUSTUS_URL env var.
-const APP_URL = process.env.JUSTUS_URL || 'https://justus-optimized.vercel.app';
+const APP_URL = process.env.JUSTUS_URL || 'https://just-us-liard.vercel.app';
 
 module.exports = {
   APP_URL,
