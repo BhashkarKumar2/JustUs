@@ -25,7 +25,7 @@ function setCurrentSocket(next) {
   socket = next;
   socketSubscribers.forEach(fn => fn());
 }
-function subscribeSocket(fn) {
+export function subscribeSocket(fn) {
   socketSubscribers.add(fn);
   return () => socketSubscribers.delete(fn);
 }
@@ -113,6 +113,11 @@ export function connectSocket(token, onMessage, onConnected, handlers = {}) {
   socket.on('message.updated', (data) => {
     console.log('Message updated:', data);
     if (handlers.onUpdated) handlers.onUpdated(data);
+  });
+
+  // Live location moved / ended
+  socket.on('location.updated', (data) => {
+    if (handlers.onLocationUpdated) handlers.onLocationUpdated(data);
   });
 
   // Listen for deleted messages

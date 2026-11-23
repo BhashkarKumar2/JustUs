@@ -37,7 +37,7 @@ const messageSchema = new mongoose.Schema({
   }],
   type: {
     type: String,
-    enum: ['text', 'image', 'audio', 'video', 'document', 'call', 'file'],
+    enum: ['text', 'image', 'audio', 'video', 'document', 'call', 'file', 'location'],
     default: 'text'
   },
   content: {
@@ -145,6 +145,10 @@ const messageSchema = new mongoose.Schema({
 
 // Indexes for performance
 messageSchema.index({ conversationId: 1, timestamp: -1 }); // Fast history retrieval
+// Live location: expiry sweep and the sender's active list only touch running live shares
+const LIVE_LOCATION_FILTER = { type: 'location', 'metadata.live': true, 'metadata.liveEnded': false };
+messageSchema.index({ 'metadata.liveUntil': 1 }, { partialFilterExpression: LIVE_LOCATION_FILTER, name: 'live_location_until' });
+messageSchema.index({ senderId: 1 }, { partialFilterExpression: LIVE_LOCATION_FILTER, name: 'live_location_sender' });
 messageSchema.index({ groupId: 1, timestamp: -1 });        // Fast group history retrieval
 messageSchema.index({ senderId: 1, timestamp: -1 });       // Fast "my sent" retrieval
 messageSchema.index({ receiverId: 1, timestamp: -1 });     // Fast "my received" retrieval

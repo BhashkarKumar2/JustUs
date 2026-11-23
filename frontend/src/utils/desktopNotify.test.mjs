@@ -15,6 +15,14 @@ test('direct text message from someone else', () => {
     { kind: 'message', title: 'Asha', body: 'hi there' });
 });
 
+test('location pin is labelled even without content', () => {
+  assert.equal(buildDesktopNotification('message', { id: 'm1', senderId: 'u-a', senderDisplayName: 'Asha', type: 'location', metadata: { lat: 1, lng: 2 } }, ME).body, '📍 Location');
+});
+
+test('live location is labelled as live', () => {
+  assert.equal(buildDesktopNotification('group.message', { id: 'm1', senderId: 'u-a', senderDisplayName: 'Asha', groupName: 'G', type: 'location', content: 'whatever', metadata: { lat: 1, lng: 2, live: true } }, ME).body.endsWith('📍 Live location'), true);
+});
+
 test('own echoed message is ignored', () => {
   assert.equal(buildDesktopNotification('message', { id: 'm1', senderId: ME, content: 'x' }, ME), null);
 });

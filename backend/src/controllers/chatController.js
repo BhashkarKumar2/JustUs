@@ -2,6 +2,7 @@ import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
 import messageService from '../services/messageService.js';
 import Subscription from '../models/Subscription.js';
+import { toPinMetadata, LOCATION_CONTENT } from '../services/locationService.js';
 import webpush from 'web-push';
 
 const DEFAULT_WALLPAPER = {
@@ -94,6 +95,11 @@ export const sendMessage = async (req, res) => {
   try {
     const userId = req.userId;
     const { receiverId, conversationId, groupId, type, content, encryptionNonce, metadata, replyTo } = req.body;
+
+    // Locations are only sent over the socket, where they are validated and live shares are managed
+    if (type === 'location') {
+      return res.status(400).json({ message: 'Location messages must be sent over the live connection' });
+    }
 
     const messageData = {
       senderId: userId,
@@ -339,10 +345,11 @@ export const forwardMessages = async (req, res) => {
         receiverId,
         conversationId,
         type: orig.type,
-        content: orig.content,
+        content: orig.type === 'location' ? LOCATION_CONTENT.pin : orig.content,
         encryptionNonce: orig.encryptionNonce || null,
         metadata: {
-          ...(orig.metadata || {}),
+          // a forwarded live location becomes a plain pin of its last point
+          ...(orig.type === 'location' ? (toPinMetadata(orig.metadata) || {}) : (orig.metadata || {})),
           forwardedFrom: {
             messageId: orig._id.toString(),
             senderId: orig.senderId,

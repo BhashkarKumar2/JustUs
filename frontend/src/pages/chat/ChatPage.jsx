@@ -7,6 +7,8 @@ import Lightbox from '../../components/chat/layout/Lightbox';
 import TypingIndicator from '../../components/chat/layout/TypingIndicator';
 import ScrollToBottomButton from '../../components/chat/layout/ScrollToBottomButton';
 import ComposeBar from '../../components/chat/input/ComposeBar';
+import { useLocationSharing } from '../../hooks/useLocationSharing';
+import { forwardedLocation } from '../../utils/location';
 import UserSelectModal from '../../components/modals/UserSelectModal';
 import VoiceCallModal from '../../components/modals/VoiceCallModal';
 import VideoCallModal from '../../components/modals/VideoCallModal';
@@ -107,6 +109,7 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
   const [typingUser, setTypingUser] = useState(null);
   // Current socket; re-renders when a reconnect replaces it so call hooks follow it
   const liveSocket = useSocket();
+  const locationShare = useLocationSharing({ socket: liveSocket, chat: { kind: 'dm', receiverId: otherUserId, conversationId } });
   // Don't carry a "typing..." label over when switching chats
   const [typingChatId, setTypingChatId] = useState(otherUserId);
   if (typingChatId !== otherUserId) {
@@ -192,12 +195,14 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
     const socket = getSocket();
     if (!socket) return;
 
+    // A forwarded location is always a pin of its last point, never a live share
+    const loc = forwardingMessage.type === 'location' ? forwardedLocation(forwardingMessage.metadata) : null;
     socket.emit('chat.send', {
       receiverId: targetUserId,
       type: forwardingMessage.type,
-      content: forwardingMessage.content,
+      content: loc ? loc.content : forwardingMessage.content,
       forwarded: true,
-      metadata: forwardingMessage.metadata,
+      metadata: loc ? loc.metadata : forwardingMessage.metadata,
       replyTo: null
     });
 
@@ -611,6 +616,10 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
               colors={colors}
               currentUserId={user.id}
               theme={theme}
+              onSendLocation={locationShare.sendCurrentLocation}
+              onStartLiveLocation={locationShare.startLiveLocation}
+              locationSupported={locationShare.supported}
+              locationBusy={locationShare.busy}
             />
 
             {showOtherUserModal && (
