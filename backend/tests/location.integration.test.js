@@ -319,6 +319,17 @@ describe('review fixes', () => {
   });
 });
 
+test('live-share queries are served by partial indexes', async () => {
+  let idx = [];
+  for (let i = 0; i < 20; i++) {
+    idx = await db.collection('messages').indexes();
+    if (idx.filter((x) => x.partialFilterExpression?.type === 'location').length >= 2) break;
+    await sleep(250);
+  }
+  const partial = idx.filter((x) => x.partialFilterExpression?.type === 'location' && x.partialFilterExpression['metadata.live'] === true);
+  expect(partial.map((x) => Object.keys(x.key)[0]).sort()).toEqual(['metadata.liveUntil', 'senderId']);
+});
+
 test('no server exceptions', () => {
   expect(logs).not.toMatch(/TypeError|ReferenceError|Error handling location/);
 });

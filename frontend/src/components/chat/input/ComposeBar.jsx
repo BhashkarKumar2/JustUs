@@ -195,7 +195,7 @@ export default function ComposeBar({
                 onMouseLeave={e => e.currentTarget.style.background = 'none'}
                 onClick={() => {
                   if (!locationSupported) {
-                    toast.error("Location isn't available in the desktop app yet — use the website on your phone");
+                    toast.error("Location isn't available here — open JustUs over https in a browser that supports location");
                     return;
                   }
                   setLocationMenuOpen(o => !o);

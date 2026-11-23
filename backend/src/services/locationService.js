@@ -4,6 +4,7 @@ import Group from '../models/Group.js';
 
 export const LOCATION_LIMITS = {
   maxLiveMs: 8 * 60 * 60 * 1000, // longest live share
+  clockSkewMs: 5 * 60 * 1000,    // client clocks may run a little ahead; capped to maxLiveMs
 };
 
 export const LOCATION_CONTENT = {
@@ -39,9 +40,10 @@ export function validateLocationMetadata(meta, now = new Date()) {
   const until = meta.liveUntil ? new Date(meta.liveUntil) : null;
   if (!until || Number.isNaN(until.getTime())) return { ok: false, error: 'Live location needs an end time' };
   if (until <= now) return { ok: false, error: 'Live location end time is in the past' };
-  if (until.getTime() - now.getTime() > LOCATION_LIMITS.maxLiveMs) return { ok: false, error: 'Live location is limited to 8 hours' };
+  if (until.getTime() - now.getTime() > LOCATION_LIMITS.maxLiveMs + LOCATION_LIMITS.clockSkewMs) return { ok: false, error: 'Live location is limited to 8 hours' };
+  const capped = new Date(Math.min(until.getTime(), now.getTime() + LOCATION_LIMITS.maxLiveMs));
 
-  return { ok: true, metadata: { ...metadata, liveUntil: until, liveEnded: false } };
+  return { ok: true, metadata: { ...metadata, liveUntil: capped, liveEnded: false } };
 }
 
 /** A plain pin built from any location metadata (used when forwarding). Null if the coordinates are invalid. */

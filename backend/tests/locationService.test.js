@@ -38,8 +38,15 @@ describe('validateLocationMetadata', () => {
     expect(validateLocationMetadata({ lat: 1, lng: 2, live: true, liveUntil: NOW.toISOString() }, NOW).ok).toBe(false);
   });
 
+  test('8 hours from a client whose clock runs a little ahead is accepted and capped', () => {
+    const until = new Date(NOW.getTime() + LOCATION_LIMITS.maxLiveMs + 2000);
+    const r = validateLocationMetadata({ lat: 1, lng: 2, live: true, liveUntil: until }, NOW);
+    expect(r.ok).toBe(true);
+    expect(r.metadata.liveUntil).toEqual(new Date(NOW.getTime() + LOCATION_LIMITS.maxLiveMs));
+  });
+
   test('rejects a live share longer than 8 hours', () => {
-    const until = new Date(NOW.getTime() + LOCATION_LIMITS.maxLiveMs + MIN);
+    const until = new Date(NOW.getTime() + LOCATION_LIMITS.maxLiveMs + 10 * MIN);
     expect(validateLocationMetadata({ lat: 1, lng: 2, live: true, liveUntil: until }, NOW).ok).toBe(false);
   });
 

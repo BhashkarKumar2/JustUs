@@ -16,6 +16,7 @@ function MiniMap({ lat, lng, dimmed }) {
   const el = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
+  const latest = useRef([lat, lng]); // position to use when Leaflet finishes loading
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -25,10 +26,10 @@ function MiniMap({ lat, lng, dimmed }) {
       map.current = L.map(el.current, {
         zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
         boxZoom: false, keyboard: false, touchZoom: false, tap: false, attributionControl: true,
-      }).setView([lat, lng], ZOOM);
+      }).setView(latest.current, ZOOM);
       map.current.attributionControl?.setPrefix(false);
       L.tileLayer(TILE_URL, { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map.current);
-      marker.current = L.circleMarker([lat, lng], { radius: 8, color: '#fff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }).addTo(map.current);
+      marker.current = L.circleMarker(latest.current, { radius: 8, color: '#fff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }).addTo(map.current);
     }).catch(() => { if (!cancelled) setFailed(true); });
     return () => {
       cancelled = true;
@@ -37,10 +38,10 @@ function MiniMap({ lat, lng, dimmed }) {
       marker.current = null;
     };
     // created once; position changes are applied below
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    latest.current = [lat, lng];
     if (!map.current) return;
     map.current.setView([lat, lng], map.current.getZoom());
     marker.current?.setLatLng([lat, lng]);

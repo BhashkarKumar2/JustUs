@@ -3,6 +3,10 @@ import Message from '../models/Message.js';
 import User from '../models/User.js';
 import { endLiveShares } from '../services/locationService.js';
 
+// Ending live locations must never block membership/room cleanup
+const endLiveSharesSafely = (req, filter) => endLiveShares(req.app.get('io'), filter)
+    .catch(err => console.error('Error handling location (group cleanup):', err.message));
+
 // Keep live sockets' group rooms in sync with membership changes. Every member's
 // sockets are joined to all their group rooms on connect (see socketHandler).
 const groupRoom = (groupId) => `group:${groupId}`;
@@ -247,7 +251,7 @@ export const deleteGroup = async (req, res) => {
         }
 
         // End live locations first so senders' apps stop sharing
-        await endLiveShares(req.app.get('io'), { groupId: id });
+        await endLiveSharesSafely(req, { groupId: id });
 
         // Delete all group messages
         await Message.deleteMany({ groupId: id });
@@ -345,7 +349,7 @@ export const removeMember = async (req, res) => {
         group.members = group.members.filter(m => m.toString() !== memberId);
         group.admins = group.admins.filter(a => a.toString() !== memberId);
         await group.save();
-        await endLiveShares(req.app.get('io'), { senderId: String(memberId), groupId: id });
+        await endLiveSharesSafely(req, { senderId: String(memberId), groupId: id });
         leaveGroupRoom(req, [memberId], id);
 
         console.log(`Member ${memberId} removed from group ${group.name}`);
@@ -383,7 +387,7 @@ export const leaveGroup = async (req, res) => {
         group.members = group.members.filter(m => m.toString() !== userId);
         group.admins = group.admins.filter(a => a.toString() !== userId);
         await group.save();
-        await endLiveShares(req.app.get('io'), { senderId: String(userId), groupId: id });
+        await endLiveSharesSafely(req, { senderId: String(userId), groupId: id });
         leaveGroupRoom(req, [userId], id);
 
         console.log(`User ${userId} left group ${group.name}`);
@@ -594,7 +598,7 @@ export const deleteGroupMessage = async (req, res) => {
             return res.status(403).json({ message: 'You can only delete your own messages' });
         }
 
-        if (message.type === 'location') await endLiveShares(req.app.get('io'), { _id: message._id });
+        if (message.type === 'location') await endLiveSharesSafely(req, { _id: message._id });
         message.deleted = true;
         await message.save();
 

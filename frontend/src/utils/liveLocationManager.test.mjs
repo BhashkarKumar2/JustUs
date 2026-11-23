@@ -240,4 +240,16 @@ test('pending stops survive a reload (kept in storage)', () => {
   assert.deepEqual(b.socket.sent.filter((x) => x.ev === 'location.stop').map((x) => x.data), [{ messageId: 'm9' }]);
 });
 
+test('reset (logout) stops GPS, the heartbeat and all tracking', () => {
+  const t = tab();
+  t.socket.server('location.active', [{ id: 'm1', liveUntil: until(t.clock, 600 * S) }]);
+  assert.ok(t.geo.watching && t.ticking());
+  t.mgr.reset();
+  assert.deepEqual(t.mgr.activeIds(), []);
+  assert.equal(t.geo.watching, null);
+  assert.equal(t.ticking(), false);
+  t.geo.move(1, 2);
+  assert.equal(t.socket.updates().length, 0);
+});
+
 console.log(`\n${passed} passed`);

@@ -125,6 +125,11 @@ export function createLiveLocationManager({ geolocation, storage, tabId, deviceI
       listeners = [];
       socket = null;
     },
+    /** Logout: stop the GPS watch, the heartbeat and all local tracking (server shares end at their time or on Stop). */
+    reset() {
+      this.detach();
+      [...shares.keys()].forEach(untrack);
+    },
     /** Call right before this tab sends a new live share. */
     markStarting() { startingUntil = now() + STARTING_WINDOW_MS; },
     stop(id) {

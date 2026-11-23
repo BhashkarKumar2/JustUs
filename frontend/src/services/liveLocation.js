@@ -34,7 +34,7 @@ function follow() {
   if (s === attached) return;
   attached = s;
   if (s) liveLocation.attach(s, getUserIdFromToken(localStorage.getItem('token')));
-  else liveLocation.detach();
+  else liveLocation.reset(); // logged out (or socket torn down): stop using GPS; location.active resumes on reconnect
 }
 
 if (hasWindow) {
