@@ -11,7 +11,7 @@ import groupAIService from '../services/groupAIService.js';
 import transcriptionService from '../services/transcriptionService.js';
 import rateLimiter from '../middleware/socketRateLimiter.js';
 import mongoose from 'mongoose';
-import { validateLocationMetadata, LOCATION_CONTENT, applyLocationUpdate, stopLiveShare, endLiveShares, activeLiveShares } from '../services/locationService.js';
+import { validateLocationMetadata, toPinMetadata, LOCATION_CONTENT, applyLocationUpdate, stopLiveShare, endLiveShares, activeLiveShares } from '../services/locationService.js';
 
 const LOCATION_UPDATE_MIN_MS = Number(process.env.LOCATION_UPDATE_MIN_MS) || 5000;
 
@@ -135,7 +135,10 @@ export const configureSocketIO = (io) => {
         // Location messages: validated server-side, never encrypted (see location design doc)
         let locationMeta = null;
         if (incoming.type === 'location') {
-          const v = validateLocationMetadata(incoming.metadata);
+          // a forwarded location is always a pin: never start sharing the forwarder's position
+          const v = incoming.forwarded
+            ? (toPinMetadata(incoming.metadata) ? { ok: true, metadata: toPinMetadata(incoming.metadata) } : { ok: false })
+            : validateLocationMetadata(incoming.metadata);
           if (!v.ok) {
             socket.emit('error', { message: 'Invalid location' });
             return;
@@ -768,7 +771,9 @@ export const configureSocketIO = (io) => {
         const userId = socket.userId;
         let { groupId, content, type = 'text', replyTo, metadata } = incoming;
         if (type === 'location') {
-          const v = validateLocationMetadata(metadata);
+          const v = incoming.forwarded
+            ? (toPinMetadata(metadata) ? { ok: true, metadata: toPinMetadata(metadata) } : { ok: false })
+            : validateLocationMetadata(metadata);
           if (!v.ok) {
             socket.emit('error', { message: 'Invalid location' });
             return;

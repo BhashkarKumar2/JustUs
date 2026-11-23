@@ -230,6 +230,95 @@ describe('live location in a group', () => {
   });
 });
 
+describe('review fixes', () => {
+  const liveDocs = (who) => db.collection('messages').find({ senderId: String(ids[who]), type: 'location', 'metadata.live': true, 'metadata.liveEnded': false, deleted: { $ne: true } }).toArray();
+  const api = (who, method, url, bodyObj) => fetch(`${API}${url}`, { method, headers: { authorization: `Bearer ${tok[who]}`, 'content-type': 'application/json' }, body: bodyObj ? JSON.stringify(bodyObj) : undefined });
+  const newGroup = async (name) => {
+    const r = await api('alice', 'POST', '/api/groups', { name, memberIds: [String(ids.bob), String(ids.carol)] });
+    const g = (await r.json()).group; return String(g.id || g._id);
+  };
+  const groupLive = async (who, gid, lat) => {
+    sock[who].emit('group.send', { groupId: gid, type: 'location', content: 'x', metadata: { lat, lng: 1, live: true, liveUntil: inMinutes(15) } });
+    const m = await waitFor('alice', 'group.message', (d) => d.type === 'location' && d.metadata?.lat === lat);
+    return String(m.id || m._id);
+  };
+  const endedFor = (who, id) => waitFor(who, 'location.updated', (d) => d.id === id && d.metadata.liveEnded === true);
+
+  test('forwarding a live location over the socket sends a pin, not a live share', async () => {
+    const live = await sendDmLive('alice', 'bob', inMinutes(30), 61, 61);
+    sock.bob.emit('chat.send', { receiverId: String(ids.alice), type: 'location', content: '📍 Live location', forwarded: true, metadata: live.metadata });
+    const fwd = await waitFor('alice', 'message', (d) => d.type === 'location' && d.metadata?.lat === 61 && String(d.senderId) === String(ids.bob));
+    expect(fwd).not.toBeNull();
+    expect(fwd.metadata.live).toBe(false);
+    expect(fwd.content).toBe('📍 Location');
+    expect(await liveDocs('bob')).toHaveLength(0);
+  });
+
+  test('forwarding a live location over REST stores a pin', async () => {
+    const live = await sendDmLive('alice', 'bob', inMinutes(30), 62, 62);
+    const r = await api('bob', 'POST', '/api/chat/messages/forward', { messageId: String(live.id), targetUserId: String(ids.alice) });
+    expect([200, 201, 403]).toContain(r.status);
+    expect(await liveDocs('bob')).toHaveLength(0);
+    const copy = await db.collection('messages').findOne({ senderId: String(ids.bob), 'metadata.lat': 62 });
+    if (copy) { expect(copy.metadata.live).toBe(false); expect(copy.metadata.liveUntil).toBeUndefined(); }
+  });
+
+  test('REST send refuses location messages', async () => {
+    const r = await api('alice', 'POST', '/api/chat/messages', { receiverId: String(ids.bob), type: 'location', content: 'x', metadata: { lat: 1, lng: 1, live: true, liveEnded: false, liveUntil: '3000-01-01T00:00:00Z' } });
+    expect(r.status).toBe(400);
+    expect(await db.collection('messages').countDocuments({ 'metadata.liveUntil': new Date('3000-01-01T00:00:00Z') })).toBe(0);
+  });
+
+  test('only the device that started a share can move it', async () => {
+    sock.alice.emit('chat.send', { receiverId: String(ids.bob), type: 'location', content: 'x', metadata: { lat: 63, lng: 63, live: true, liveUntil: inMinutes(15), sourceId: 'dev-phone' } });
+    const live = await waitFor('bob', 'message', (d) => d.type === 'location' && d.metadata?.lat === 63);
+    sock.alice.emit('location.update', { messageId: live.id, lat: 63.5, lng: 63, sourceId: 'dev-desktop' });
+    await sleep(700);
+    expect((await msgDoc(live.id)).metadata.lat).toBe(63);
+    await sleep(UPDATE_MIN_MS);
+    sock.alice.emit('location.update', { messageId: live.id, lat: 63.7, lng: 63, sourceId: 'dev-phone' });
+    expect(await waitFor('bob', 'location.updated', (d) => d.id === String(live.id) && d.metadata.lat === 63.7)).not.toBeNull();
+    const again = await connect('alice3');
+    try {
+      const active = await waitFor('alice3', 'location.active', () => true);
+      expect(active.find((a) => a.id === String(live.id))?.sourceId).toBe('dev-phone');
+    } finally { again.disconnect(); }
+    sock.alice.emit('location.stop', { messageId: live.id });
+    expect(await endedFor('bob', String(live.id))).not.toBeNull();
+  });
+
+  test('removing a sharing member ends their live share', async () => {
+    const gid = await newGroup('rm group');
+    const id = await groupLive('bob', gid, 64);
+    await api('alice', 'DELETE', `/api/groups/${gid}/members/${ids.bob}`);
+    expect(await endedFor('alice', id)).not.toBeNull();
+    expect((await msgDoc(id)).metadata.liveEnded).toBe(true);
+  });
+
+  test('leaving a group ends your live share', async () => {
+    const gid = await newGroup('leave group');
+    const id = await groupLive('carol', gid, 65);
+    await api('carol', 'POST', `/api/groups/${gid}/leave`);
+    expect(await endedFor('alice', id)).not.toBeNull();
+  });
+
+  test('deleting a group ends its live shares', async () => {
+    const gid = await newGroup('del group');
+    const id = await groupLive('bob', gid, 66);
+    await api('alice', 'DELETE', `/api/groups/${gid}`);
+    expect(await endedFor('bob', id)).not.toBeNull(); // the group's messages are deleted with it
+    expect(await liveDocs('bob')).toHaveLength(0);
+  });
+
+  test('deleting a live share through REST ends it', async () => {
+    const gid = await newGroup('rest del group');
+    const id = await groupLive('alice', gid, 67);
+    await api('alice', 'DELETE', `/api/groups/${gid}/messages/${id}`);
+    expect(await endedFor('alice', id)).not.toBeNull();
+    expect((await msgDoc(id)).metadata.liveEnded).toBe(true);
+  });
+});
+
 test('no server exceptions', () => {
   expect(logs).not.toMatch(/TypeError|ReferenceError|Error handling location/);
 });

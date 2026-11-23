@@ -33,6 +33,8 @@ export function validateLocationMetadata(meta, now = new Date()) {
 
   const metadata = { ...pos, live: meta.live === true, updatedAt: now };
   if (!metadata.live) return { ok: true, metadata };
+  // the device that started a live share; only it may send updates
+  if (typeof meta.sourceId === 'string' && meta.sourceId.length > 0 && meta.sourceId.length <= 64) metadata.sourceId = meta.sourceId;
 
   const until = meta.liveUntil ? new Date(meta.liveUntil) : null;
   if (!until || Number.isNaN(until.getTime())) return { ok: false, error: 'Live location needs an end time' };
@@ -42,12 +44,18 @@ export function validateLocationMetadata(meta, now = new Date()) {
   return { ok: true, metadata: { ...metadata, liveUntil: until, liveEnded: false } };
 }
 
+/** A plain pin built from any location metadata (used when forwarding). Null if the coordinates are invalid. */
+export function toPinMetadata(meta, now = new Date()) {
+  const pos = normalizePosition(meta);
+  return pos ? { ...pos, live: false, updatedAt: now } : null;
+}
+
 // ---- Live share lifecycle -------------------------------------------------
 // Every state change is a single conditional write, so a racing update, stop
 // and expiry sweep can never revive an ended share or emit "ended" twice.
 
 
-const ACTIVE_LIVE = { type: 'location', 'metadata.live': true, 'metadata.liveEnded': false };
+const ACTIVE_LIVE = { type: 'location', 'metadata.live': true, 'metadata.liveEnded': false, deleted: { $ne: true } };
 
 /** Broadcast a location message's current metadata to everyone in its chat. */
 export function emitLocationUpdated(io, message) {
@@ -94,6 +102,7 @@ export async function applyLocationUpdate(io, messageId, userId, position, now =
   const current = await Message.findOne({ _id: messageId, senderId: userId, ...ACTIVE_LIVE });
   if (!current) return 'ignored';
   if (current.groupId && !(await Group.exists({ _id: current.groupId, members: userId }))) return 'ignored';
+  if (current.metadata.sourceId && current.metadata.sourceId !== position?.sourceId) return 'ignored';
 
   if (!(new Date(current.metadata.liveUntil) > now)) {
     return (await endLiveShares(io, { _id: current._id })) ? 'ended' : 'ignored';
@@ -127,6 +136,6 @@ export function startLocationSweep(io, intervalMs = 60000) {
 /** The user's own live shares that are still running: [{id, liveUntil}]. */
 export async function activeLiveShares(userId, now = new Date()) {
   const docs = await Message.find({ senderId: userId, ...ACTIVE_LIVE, 'metadata.liveUntil': { $gt: now } })
-    .select('_id metadata.liveUntil').lean();
-  return docs.map((d) => ({ id: String(d._id), liveUntil: d.metadata.liveUntil }));
+    .select('_id metadata.liveUntil metadata.sourceId').lean();
+  return docs.map((d) => ({ id: String(d._id), liveUntil: d.metadata.liveUntil, sourceId: d.metadata.sourceId || null }));
 }
