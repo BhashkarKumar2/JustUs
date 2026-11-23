@@ -36,6 +36,7 @@ export function getUserIdFromToken(token) {
 
 function messageBody(data) {
   if (MEDIA_LABELS[data.type]) return MEDIA_LABELS[data.type];
+  if (data.type === 'location') return data.metadata?.live ? '📍 Live location' : '📍 Location';
   // End-to-end encrypted content is ciphertext at this layer; don't show it.
   if (data.encryptionNonce || data.ciphertext) return '🔒 New message';
   const text = typeof data.content === 'string' ? data.content.trim() : '';

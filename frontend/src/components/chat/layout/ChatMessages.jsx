@@ -5,6 +5,7 @@ import ImageMessage from '../messages/ImageMessage';
 import DocumentMessage from '../messages/DocumentMessage';
 import VideoMessage from '../messages/VideoMessage';
 import CallMessage from '../messages/CallMessage';
+import LocationMessage from '../messages/LocationMessage';
 import { fmtTime } from '../../../utils/format';
 import { loadAuthenticatedMedia } from '../../../utils/mediaLoader';
 import { toast } from 'react-hot-toast';
@@ -121,6 +122,7 @@ const MessageItem = React.memo(({
         case 'audio': return 'Voice message';
         case 'document': return `${replyMessage.metadata?.filename || 'Document'}`;
         case 'call': return 'Call';
+        case 'location': return 'Location';
         default: return replyMessage.content;
       }
     };
@@ -224,7 +226,12 @@ const MessageItem = React.memo(({
             <DocumentMessage message={msg} mine={isOwn} onOpenLightbox={onOpenLightbox} />
           </div>
         )}
-        {(msg.type === 'file' || (msg.type && !['text', 'image', 'audio', 'video', 'document', 'call'].includes(msg.type))) && (
+        {msg.type === 'location' && (
+          <div style={{ paddingLeft: isOwn ? '32px' : '0', paddingRight: isOwn ? '0' : '32px' }}>
+            <LocationMessage message={msg} mine={isOwn} theme={theme} />
+          </div>
+        )}
+        {(msg.type === 'file' || (msg.type && !['text', 'image', 'audio', 'video', 'document', 'call', 'location'].includes(msg.type))) && (
           <div style={{ paddingLeft: isOwn ? '32px' : '0', paddingRight: isOwn ? '0' : '32px' }}>
             <DocumentMessage message={msg} mine={isOwn} onOpenLightbox={onOpenLightbox} />
           </div>

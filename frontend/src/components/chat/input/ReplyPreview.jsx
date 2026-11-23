@@ -17,6 +17,8 @@ export default function ReplyPreview({ replyToMessage, onCancel, colors }) {
         return 'Video';
       case 'call':
         return 'Call';
+      case 'location':
+        return 'Location';
       default:
         return replyToMessage.content;
     }

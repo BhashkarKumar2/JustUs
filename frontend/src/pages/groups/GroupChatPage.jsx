@@ -8,6 +8,7 @@ import Lightbox from '../../components/chat/layout/Lightbox';
 import MentionPicker from '../../components/groups/MentionPicker'; // Still used for display names logic but picker is now inside logic
 import './GroupChatPage.css';
 import ComposeBar from '../../components/chat/input/ComposeBar';
+import LocationMessage from '../../components/chat/messages/LocationMessage';
 import useImageUpload from '../../hooks/useImageUpload';
 import useMessageSender from '../../hooks/useMessageSender'; // For sound effects/text logic if needed
 import { useSocket } from '../../services/socket';
@@ -318,6 +319,9 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => {
     // Render attachment preview
     const renderAttachment = (message) => {
         if (!message.type || message.type === 'text') return null;
+        if (message.type === 'location') {
+            return <LocationMessage message={message} mine={message.senderId === user.id} theme={theme} />;
+        }
 
         const isImage = message.type === 'image';
         const isVideo = message.type === 'video';

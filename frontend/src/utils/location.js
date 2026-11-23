@@ -88,3 +88,14 @@ export function releaseLiveLock(storage, messageId, tabId) {
     if (JSON.parse(storage.getItem(key))?.tabId === tabId) storage.removeItem(key);
   } catch { /* ignore */ }
 }
+
+/** Patch a message list with a `location.updated` event; same array back if the message isn't in it. */
+export function applyLocationUpdate(list, event) {
+  if (!event?.id) return list;
+  const id = String(event.id);
+  const i = list.findIndex((m) => String(m.id ?? m._id) === id);
+  if (i === -1) return list;
+  const next = list.slice();
+  next[i] = { ...list[i], metadata: { ...list[i].metadata, ...event.metadata } };
+  return next;
+}

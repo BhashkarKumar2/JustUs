@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getSocket, useSocket } from '../services/socket';
+import { applyLocationUpdate } from '../utils/location';
 
 /**
  * Hook for managing group socket events
@@ -135,8 +136,15 @@ export const useGroupSocket = (groupId, user) => {
 
         socket.on('group.message_reacted', handleMessageReacted);
 
+        // Live location moved / ended in this group
+        const handleLocationUpdated = (data) => {
+            if (String(data?.groupId) === String(groupId)) setMessages(prev => applyLocationUpdate(prev, data));
+        };
+        socket.on('location.updated', handleLocationUpdated);
+
         return () => {
             socket.off('group.message', handleGroupMessage);
+            socket.off('location.updated', handleLocationUpdated);
             socket.off('group.typing', handleGroupTyping);
             socket.off('group.message_deleted', handleMessageDeleted);
             socket.off('group.message_read', handleMessageRead);

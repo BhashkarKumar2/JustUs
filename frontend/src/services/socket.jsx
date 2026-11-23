@@ -115,6 +115,11 @@ export function connectSocket(token, onMessage, onConnected, handlers = {}) {
     if (handlers.onUpdated) handlers.onUpdated(data);
   });
 
+  // Live location moved / ended
+  socket.on('location.updated', (data) => {
+    if (handlers.onLocationUpdated) handlers.onLocationUpdated(data);
+  });
+
   // Listen for deleted messages
   socket.on('messages.deleted', (data) => {
     console.log('Message deleted:', data);

@@ -6,6 +6,8 @@ import { refreshAccessToken, forceLogout } from '../services/api';
 // while it is still retrying on its own, a new socket would just restart the attempt.
 const socketNeedsRebuild = () => { const s = getSocket(); return !s || (!s.connected && !s.active); };
 import { mergeMessages } from '../utils/chatUtils';
+import { applyLocationUpdate } from '../utils/location';
+import '../services/liveLocation'; // app-wide live-location sender: must exist before the first socket
 
 export default function useChatSocket({
   token,
@@ -130,6 +132,9 @@ export default function useChatSocket({
               },
               onEdited: (editedMessage) => {
                 setMessagesRef.current(prev => prev.map(msg => msg.id === editedMessage.id ? { ...msg, content: editedMessage.content } : msg));
+              },
+              onLocationUpdated: (update) => {
+                setMessagesRef.current(prev => applyLocationUpdate(prev, update));
               },
               onUpdated: (updatedMessage) => {
                 console.log('[Frontend] Message Updated (Translation):', updatedMessage.id);
@@ -265,6 +270,9 @@ export default function useChatSocket({
             },
             onEdited: (editedMessage) => {
               setMessagesRef.current(prev => prev.map(msg => msg.id === editedMessage.id ? { ...msg, content: editedMessage.content } : msg));
+            },
+            onLocationUpdated: (update) => {
+              setMessagesRef.current(prev => applyLocationUpdate(prev, update));
             },
             onUpdated: (updatedMessage) => {
               setMessagesRef.current(prev => {

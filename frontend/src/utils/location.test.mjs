@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   distanceMeters, shouldSendUpdate, mapsUrl, liveStatus, formatLiveCaption,
-  geolocationErrorMessage, acquireLiveLock, LIVE_LOCK_STALE_MS,
+  geolocationErrorMessage, acquireLiveLock, LIVE_LOCK_STALE_MS, applyLocationUpdate,
 } from './location.js';
 
 let passed = 0;
