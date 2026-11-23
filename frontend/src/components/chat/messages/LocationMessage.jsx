@@ -82,9 +82,6 @@ export default function LocationMessage({ message, mine, onStopLive = stopViaMan
     return () => { clearInterval(tick); clearTimeout(end); };
   }, [status, meta.liveUntil]);
 
-  // a server update should refresh the relative time immediately
-  useEffect(() => { setNow(new Date()); }, [meta.updatedAt, meta.liveEnded]);
-
   const valid = typeof meta.lat === 'number' && typeof meta.lng === 'number';
   if (!valid) return <span>{message.content || '📍 Location'}</span>;
 
