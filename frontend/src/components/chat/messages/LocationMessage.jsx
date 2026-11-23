@@ -26,6 +26,7 @@ function MiniMap({ lat, lng, dimmed }) {
         zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
         boxZoom: false, keyboard: false, touchZoom: false, tap: false, attributionControl: true,
       }).setView([lat, lng], ZOOM);
+      map.current.attributionControl?.setPrefix(false);
       L.tileLayer(TILE_URL, { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map.current);
       marker.current = L.circleMarker([lat, lng], { radius: 8, color: '#fff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }).addTo(map.current);
     }).catch(() => { if (!cancelled) setFailed(true); });

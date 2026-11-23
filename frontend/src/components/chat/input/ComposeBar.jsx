@@ -35,6 +35,7 @@ export default function ComposeBar({
   const [isDragging, setIsDragging] = useState(false);
   const [stagedFile, setStagedFile] = useState(null); // Added for preview modal
   const [locationMenuOpen, setLocationMenuOpen] = useState(false);
+  const [locationButton, setLocationButton] = useState(null);
   const inputRef = React.useRef(null);
 
   // Auto-focus input when replying
@@ -200,6 +201,7 @@ export default function ComposeBar({
                   setLocationMenuOpen(o => !o);
                 }}
                 disabled={locationBusy || !otherUser}
+                ref={setLocationButton}
                 title="Share location"
                 aria-haspopup="menu"
                 aria-expanded={locationMenuOpen}
@@ -210,6 +212,7 @@ export default function ComposeBar({
               </button>
               {locationMenuOpen && (
                 <LocationMenu
+                  anchor={locationButton}
                   colors={colors}
                   onClose={() => setLocationMenuOpen(false)}
                   onSendCurrent={onSendLocation}
