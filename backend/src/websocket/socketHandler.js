@@ -11,6 +11,7 @@ import groupAIService from '../services/groupAIService.js';
 import transcriptionService from '../services/transcriptionService.js';
 import rateLimiter from '../middleware/socketRateLimiter.js';
 import mongoose from 'mongoose';
+import { validateLocationMetadata, LOCATION_CONTENT } from '../services/locationService.js';
 
 export const configureSocketIO = (io) => {
   // console.log('=== CONFIGURING SOCKET.IO AUTH MIDDLEWARE ===');
@@ -123,13 +124,26 @@ export const configureSocketIO = (io) => {
           return;
         }
 
+        // Location messages: validated server-side, never encrypted (see location design doc)
+        let locationMeta = null;
+        if (incoming.type === 'location') {
+          const v = validateLocationMetadata(incoming.metadata);
+          if (!v.ok) {
+            socket.emit('error', { message: 'Invalid location' });
+            return;
+          }
+          locationMeta = v.metadata;
+        }
+
         const messageData = {
           senderId: userId,
           receiverId: incoming.receiverId,
           type: incoming.type,
-          content: incoming.ciphertext || incoming.content,
-          encryptionNonce: incoming.nonce || null,
-          metadata: incoming.metadata || null,
+          content: locationMeta
+            ? (locationMeta.live ? LOCATION_CONTENT.live : LOCATION_CONTENT.pin)
+            : (incoming.ciphertext || incoming.content),
+          encryptionNonce: locationMeta ? null : (incoming.nonce || null),
+          metadata: locationMeta || incoming.metadata || null,
           replyTo: incoming.replyTo || null,
           timestamp: new Date(),
           delivered: true,
@@ -710,7 +724,16 @@ export const configureSocketIO = (io) => {
     socket.on('group.send', async (incoming) => {
       try {
         const userId = socket.userId;
-        const { groupId, content, type = 'text', replyTo, metadata } = incoming;
+        let { groupId, content, type = 'text', replyTo, metadata } = incoming;
+        if (type === 'location') {
+          const v = validateLocationMetadata(metadata);
+          if (!v.ok) {
+            socket.emit('error', { message: 'Invalid location' });
+            return;
+          }
+          metadata = v.metadata;
+          content = v.metadata.live ? LOCATION_CONTENT.live : LOCATION_CONTENT.pin;
+        }
 
         console.log(`[group.send] User ${userId} sending to group ${groupId}:`, content?.substring(0, 50));
 
@@ -774,7 +797,7 @@ export const configureSocketIO = (io) => {
 
         // Update group's last message
         group.lastMessageAt = new Date();
-        group.lastMessagePreview = type === 'text'
+        group.lastMessagePreview = (type === 'text' || type === 'location')
           ? content.substring(0, 50) + (content.length > 50 ? '...' : '')
           : `[${type}]`;
         await group.save();
