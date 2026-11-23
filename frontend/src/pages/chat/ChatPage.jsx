@@ -8,6 +8,7 @@ import TypingIndicator from '../../components/chat/layout/TypingIndicator';
 import ScrollToBottomButton from '../../components/chat/layout/ScrollToBottomButton';
 import ComposeBar from '../../components/chat/input/ComposeBar';
 import { useLocationSharing } from '../../hooks/useLocationSharing';
+import { forwardedLocation } from '../../utils/location';
 import UserSelectModal from '../../components/modals/UserSelectModal';
 import VoiceCallModal from '../../components/modals/VoiceCallModal';
 import VideoCallModal from '../../components/modals/VideoCallModal';
@@ -194,12 +195,14 @@ export default function ChatPage({ user, onLogout, onUserUpdate, showContactSwit
     const socket = getSocket();
     if (!socket) return;
 
+    // A forwarded location is always a pin of its last point, never a live share
+    const loc = forwardingMessage.type === 'location' ? forwardedLocation(forwardingMessage.metadata) : null;
     socket.emit('chat.send', {
       receiverId: targetUserId,
       type: forwardingMessage.type,
-      content: forwardingMessage.content,
+      content: loc ? loc.content : forwardingMessage.content,
       forwarded: true,
-      metadata: forwardingMessage.metadata,
+      metadata: loc ? loc.metadata : forwardingMessage.metadata,
       replyTo: null
     });
 

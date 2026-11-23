@@ -38,11 +38,11 @@ function fakeGeo() {
 }
 
 /** A tab: its own manager, socket, geolocation and clock; storage can be shared between tabs. */
-function tab({ storage = memoryStorage(), tabId = 'A', clock = { t: 1_000_000 } } = {}) {
+function tab({ storage = memoryStorage(), tabId = 'A', clock = { t: 1_000_000 }, deviceId = 'dev-1' } = {}) {
   const geo = fakeGeo();
   let ticker = null;
   const mgr = createLiveLocationManager({
-    geolocation: geo, storage, tabId, now: () => clock.t,
+    geolocation: geo, storage, tabId, deviceId, now: () => clock.t,
     setInterval: (fn) => { ticker = fn; return 1; }, clearInterval: () => { ticker = null; },
   });
   const socket = fakeSocket();
@@ -62,7 +62,7 @@ test('resumes a running share from location.active and sends the first fix at on
   t.socket.server('location.active', [{ id: 'm1', liveUntil: until(t.clock, 10 * 60 * S) }]);
   assert.ok(t.geo.watching, 'watching position');
   t.geo.move(10.5, 20.5, 12);
-  assert.deepEqual(t.socket.updates().map((u) => u.data), [{ messageId: 'm1', lat: 10.5, lng: 20.5, accuracy: 12 }]);
+  assert.deepEqual(t.socket.updates().map((u) => u.data), [{ messageId: 'm1', lat: 10.5, lng: 20.5, accuracy: 12, sourceId: 'dev-1' }]);
 });
 
 test('throttles: nothing within 15 s, sends after 20 s and ~25 m', () => {
@@ -196,6 +196,48 @@ test('without geolocation nothing breaks', () => {
   mgr.attach(s, ME);
   s.server('location.active', [{ id: 'm1', liveUntil: new Date(600 * S).toISOString() }]);
   assert.equal(s.updates().length, 0);
+});
+
+test('updates carry this device id', () => {
+  const t = tab();
+  t.socket.server('location.active', [{ id: 'm1', liveUntil: until(t.clock, 600 * S), sourceId: 'dev-1' }]);
+  t.geo.move(1, 2);
+  assert.equal(t.socket.updates()[0].data.sourceId, 'dev-1');
+});
+
+test('live shares started on another device are not sent from here', () => {
+  const t = tab();
+  t.socket.server('location.active', [{ id: 'm1', liveUntil: until(t.clock, 600 * S), sourceId: 'dev-phone' }]);
+  t.socket.server('message', ownLive(t.clock, 'm2', { metadata: { ...ownLive(t.clock).metadata, sourceId: 'dev-phone' } }));
+  assert.deepEqual(t.mgr.activeIds(), []);
+  assert.equal(t.geo.watching, null);
+});
+
+test('a stop pressed while offline is sent on reconnect and the share is not resumed', () => {
+  const t = tab();
+  t.socket.server('location.active', [{ id: 'm1', liveUntil: until(t.clock, 600 * S) }]);
+  t.mgr.detach();
+  t.mgr.stop('m1');
+  const s2 = fakeSocket();
+  t.mgr.attach(s2, ME);
+  assert.deepEqual(s2.sent.filter((x) => x.ev === 'location.stop').map((x) => x.data), [{ messageId: 'm1' }]);
+  s2.server('location.active', [{ id: 'm1', liveUntil: until(t.clock, 600 * S) }]);
+  assert.deepEqual(t.mgr.activeIds(), []);
+  assert.equal(s2.sent.filter((x) => x.ev === 'location.stop').length, 2, 're-sent when the server still lists it');
+  s2.server('location.updated', { id: 'm1', metadata: { live: true, liveEnded: true } });
+  const s3 = fakeSocket();
+  t.mgr.attach(s3, ME);
+  assert.equal(s3.sent.filter((x) => x.ev === 'location.stop').length, 0, 'forgotten once the server confirms');
+});
+
+test('pending stops survive a reload (kept in storage)', () => {
+  const storage = memoryStorage();
+  const clock = { t: 1_000_000 };
+  const a = tab({ storage, clock });
+  a.mgr.detach();
+  a.mgr.stop('m9');
+  const b = tab({ storage, clock, tabId: 'B' }); // a fresh page with the same storage
+  assert.deepEqual(b.socket.sent.filter((x) => x.ev === 'location.stop').map((x) => x.data), [{ messageId: 'm9' }]);
 });
 
 console.log(`\n${passed} passed`);

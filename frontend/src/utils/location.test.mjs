@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   distanceMeters, shouldSendUpdate, mapsUrl, liveStatus, formatLiveCaption,
-  geolocationErrorMessage, acquireLiveLock, LIVE_LOCK_STALE_MS, applyLocationUpdate,
+  geolocationErrorMessage, acquireLiveLock, LIVE_LOCK_STALE_MS, applyLocationUpdate, forwardedLocation,
 } from './location.js';
 
 let passed = 0;
@@ -84,5 +84,10 @@ test('live lock: corrupt value is treated as free', () => {
   assert.equal(acquireLiveLock(st, 'm1', 'tabA', 0), true);
 });
 test('live lock stale window is 30 s', () => assert.equal(LIVE_LOCK_STALE_MS, 30 * S));
+
+test('forwarding a live location sends a pin of its last point', () => {
+  const live = { lat: 1.5, lng: 2.5, accuracy: 9, live: true, liveEnded: false, liveUntil: 'x', updatedAt: 'y', sourceId: 'dev' };
+  assert.deepEqual(forwardedLocation(live), { content: '📍 Location', metadata: { lat: 1.5, lng: 2.5, accuracy: 9, live: false } });
+});
 
 console.log(`\n${passed} passed`);

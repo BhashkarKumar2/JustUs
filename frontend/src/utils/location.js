@@ -99,3 +99,11 @@ export function applyLocationUpdate(list, event) {
   next[i] = { ...list[i], metadata: { ...list[i].metadata, ...event.metadata } };
   return next;
 }
+
+/** What to send when forwarding a location: always a pin of its last point, never a live share. */
+export function forwardedLocation(metadata) {
+  return {
+    content: '📍 Location',
+    metadata: { lat: metadata?.lat, lng: metadata?.lng, accuracy: metadata?.accuracy ?? null, live: false },
+  };
+}

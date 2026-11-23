@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { geolocationErrorMessage } from '../utils/location';
-import { liveLocation } from '../services/liveLocation';
+import { liveLocation, deviceId } from '../services/liveLocation';
 
 const CONTENT = { pin: '📍 Location', live: '📍 Live location' };
 
@@ -37,7 +37,7 @@ export function useLocationSharing({ socket, chat }) {
         lng: pos.coords.longitude,
         accuracy: Math.round(pos.coords.accuracy),
         live: !!liveMs,
-        ...(liveMs ? { liveUntil: new Date(Date.now() + liveMs).toISOString() } : {}),
+        ...(liveMs ? { liveUntil: new Date(Date.now() + liveMs).toISOString(), sourceId: deviceId } : {}),
       };
       const content = liveMs ? CONTENT.live : CONTENT.pin;
       if (liveMs) liveLocation.markStarting();
