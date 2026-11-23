@@ -16,7 +16,7 @@ const OFFLINE_URL = require('url').pathToFileURL(OFFLINE_PAGE).href;
 const STATE_FILE = () => path.join(app.getPath('userData'), 'window-state.json');
 const ALLOWED_PERMISSIONS = new Set([
   'media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write',
-  'fullscreen', 'pointerLock', 'speaker-selection',
+  'fullscreen', 'pointerLock', 'speaker-selection', 'geolocation',
 ]);
 
 let win = null;
