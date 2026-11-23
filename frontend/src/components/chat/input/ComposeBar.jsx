@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import ReplyPreview from './ReplyPreview';
 import BotActivation from './BotActivation';
 import MediaPreviewModal from '../../modals/MediaPreviewModal';
+import LocationMenu from './LocationMenu';
+import { toast } from 'react-hot-toast';
 
 export default function ComposeBar({
   text,
@@ -23,11 +25,16 @@ export default function ComposeBar({
   connectionStatus,
   colors,
   currentUserId,
-  theme // Added
+  theme, // Added
+  onSendLocation,
+  onStartLiveLocation,
+  locationSupported = true,
+  locationBusy = false
 }) {
   const [isBotActive, setIsBotActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [stagedFile, setStagedFile] = useState(null); // Added for preview modal
+  const [locationMenuOpen, setLocationMenuOpen] = useState(false);
   const inputRef = React.useRef(null);
 
   // Auto-focus input when replying
@@ -177,6 +184,40 @@ export default function ComposeBar({
               </svg>
             )}
           </button>
+
+          {onSendLocation && (
+            <span style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                type="button"
+                style={{ padding: 'clamp(6px, 2vw, 8px)', borderRadius: '50%', background: 'none', border: 'none', color: colors.inputText, cursor: 'pointer', transition: 'background 0.2s', fontSize: 20, lineHeight: '24px', width: 40, height: 40 }}
+                onMouseEnter={e => e.currentTarget.style.background = colors.inputBorder}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                onClick={() => {
+                  if (!locationSupported) {
+                    toast.error("Location isn't available in the desktop app yet — use the website on your phone");
+                    return;
+                  }
+                  setLocationMenuOpen(o => !o);
+                }}
+                disabled={locationBusy || !otherUser}
+                title="Share location"
+                aria-haspopup="menu"
+                aria-expanded={locationMenuOpen}
+              >
+                {locationBusy ? (
+                  <div style={{ width: '20px', height: '20px', border: '2px solid #9ca3af', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div>
+                ) : '📍'}
+              </button>
+              {locationMenuOpen && (
+                <LocationMenu
+                  colors={colors}
+                  onClose={() => setLocationMenuOpen(false)}
+                  onSendCurrent={onSendLocation}
+                  onStartLive={onStartLiveLocation}
+                />
+              )}
+            </span>
+          )}
 
           <button
             className="bot-toggle-btn p-2 rounded-full transition-all duration-300"

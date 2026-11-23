@@ -9,6 +9,8 @@ import MentionPicker from '../../components/groups/MentionPicker'; // Still used
 import './GroupChatPage.css';
 import ComposeBar from '../../components/chat/input/ComposeBar';
 import LocationMessage from '../../components/chat/messages/LocationMessage';
+import { applyLocationUpdate } from '../../utils/location';
+import { useLocationSharing } from '../../hooks/useLocationSharing';
 import useImageUpload from '../../hooks/useImageUpload';
 import useMessageSender from '../../hooks/useMessageSender'; // For sound effects/text logic if needed
 import { useSocket } from '../../services/socket';
@@ -107,6 +109,7 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => {
     // Sync real-time reaction & read updates into loadedMessages
     // (socket events update socketMessages, but most messages live in loadedMessages)
     const liveSocket = useSocket(); // follows reconnects
+    const locationShare = useLocationSharing({ socket: liveSocket, chat: { kind: 'group', groupId } });
     useEffect(() => {
         const socket = liveSocket;
         if (!socket || !groupId) return;
@@ -137,11 +140,17 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => {
             }
         };
 
+        const handleLocationUpdated = (data) => {
+            if (String(data?.groupId) === String(groupId)) setLoadedMessages(prev => applyLocationUpdate(prev, data));
+        };
+
         socket.on('group.message_reacted', handleReacted);
         socket.on('group.message_read', handleRead);
+        socket.on('location.updated', handleLocationUpdated);
         return () => {
             socket.off('group.message_reacted', handleReacted);
             socket.off('group.message_read', handleRead);
+            socket.off('location.updated', handleLocationUpdated);
         };
     }, [groupId, setLoadedMessages, liveSocket]);
 
@@ -731,6 +740,10 @@ const GroupChatPage = ({ user, groupId, onBack, theme = 'dark' }) => {
                 connectionStatus={connectionStatus}
                 // Map group to otherUser for ComposeBar compatibility
                 otherUser={group ? { ...group, displayName: group.name } : null}
+                onSendLocation={locationShare.sendCurrentLocation}
+                onStartLiveLocation={locationShare.startLiveLocation}
+                locationSupported={locationShare.supported}
+                locationBusy={locationShare.busy}
                 // Disable unsupported features
                 recording={false} // Todo: enable voice messages for groups
                 replyingTo={null}
