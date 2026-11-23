@@ -33,7 +33,7 @@ const waitFor = async (who, ev, pred, ms = 4000) => {
   return null;
 };
 const connect = (who) => new Promise((resolve, reject) => {
-  const s = ioClient(API, { auth: { token: tok[who] }, transports: ['websocket'], reconnection: false });
+  const s = ioClient(API, { auth: { token: tok[who] || tok[who.replace(/\d+$/, '')] }, transports: ['websocket'], reconnection: false });
   events[who] = [];
   s.onAny((ev, data) => events[who].push({ ev, data }));
   s.on('connect', () => resolve(s));
@@ -189,6 +189,22 @@ describe('ending', () => {
     expect(second).not.toBeNull();
     expect(await waitFor('bob', 'location.updated', (d) => d.id === String(first.id) && d.metadata.liveEnded === true)).not.toBeNull();
     expect((await msgDoc(second.id)).metadata.liveEnded).toBe(false);
+  });
+
+  test('on connect the sender is told which of their live shares are still running', async () => {
+    const running = await db.collection('messages').find({ senderId: String(ids.alice), type: 'location', 'metadata.live': true, 'metadata.liveEnded': false }).toArray();
+    expect(running.length).toBeGreaterThan(0);
+    const again = await connect('alice2');
+    try {
+      const active = await waitFor('alice2', 'location.active', () => true);
+      expect(active).not.toBeNull();
+      expect(active.map((a) => a.id).sort()).toEqual(running.map((m) => String(m._id)).sort());
+      expect(active.every((a) => a.liveUntil)).toBe(true);
+      // the receiver has none of their own
+      const bobAgain = await connect('bob2');
+      expect(await waitFor('bob2', 'location.active', () => true)).toEqual([]);
+      bobAgain.disconnect();
+    } finally { again.disconnect(); }
   });
 });
 

@@ -123,3 +123,10 @@ export function startLocationSweep(io, intervalMs = 60000) {
   timer.unref?.();
   return () => clearInterval(timer);
 }
+
+/** The user's own live shares that are still running: [{id, liveUntil}]. */
+export async function activeLiveShares(userId, now = new Date()) {
+  const docs = await Message.find({ senderId: userId, ...ACTIVE_LIVE, 'metadata.liveUntil': { $gt: now } })
+    .select('_id metadata.liveUntil').lean();
+  return docs.map((d) => ({ id: String(d._id), liveUntil: d.metadata.liveUntil }));
+}

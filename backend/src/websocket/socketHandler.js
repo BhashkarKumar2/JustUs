@@ -11,7 +11,7 @@ import groupAIService from '../services/groupAIService.js';
 import transcriptionService from '../services/transcriptionService.js';
 import rateLimiter from '../middleware/socketRateLimiter.js';
 import mongoose from 'mongoose';
-import { validateLocationMetadata, LOCATION_CONTENT, applyLocationUpdate, stopLiveShare, endLiveShares } from '../services/locationService.js';
+import { validateLocationMetadata, LOCATION_CONTENT, applyLocationUpdate, stopLiveShare, endLiveShares, activeLiveShares } from '../services/locationService.js';
 
 const LOCATION_UPDATE_MIN_MS = Number(process.env.LOCATION_UPDATE_MIN_MS) || 5000;
 
@@ -71,6 +71,12 @@ export const configureSocketIO = (io) => {
     Group.find({ members: socket.userId }, { _id: 1 }).lean()
       .then(groups => { if (socket.connected) groups.forEach(g => socket.join(`group:${g._id}`)); })
       .catch(err => console.error('Failed to join group rooms:', err.message));
+
+    // Tell the sender which of their live locations are still running, so the app
+    // resumes sending after a reload / reconnect / reopen.
+    activeLiveShares(socket.userId)
+      .then(list => { if (socket.connected) socket.emit('location.active', list); })
+      .catch(err => console.error('Error handling location (active list):', err.message));
 
     // Broadcast user online status to all connected users
     socket.broadcast.emit('user:status', {
