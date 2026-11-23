@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import './services/liveLocation'; // app-wide live-location sender
 
 // Apply saved theme early to prevent flash
 const savedTheme = localStorage.getItem('theme') || 'light';

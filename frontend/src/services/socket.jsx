@@ -25,7 +25,7 @@ function setCurrentSocket(next) {
   socket = next;
   socketSubscribers.forEach(fn => fn());
 }
-function subscribeSocket(fn) {
+export function subscribeSocket(fn) {
   socketSubscribers.add(fn);
   return () => socketSubscribers.delete(fn);
 }
