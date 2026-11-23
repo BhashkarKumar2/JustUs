@@ -10,6 +10,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 
 import { configureSocketIO } from './websocket/socketHandler.js';
+import { startLocationSweep } from './services/locationService.js';
 import authRoutes from './routes/authRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import mediaRoutes from './routes/mediaRoutes.js';
@@ -169,6 +170,7 @@ const io = new Server(httpServer, {
 });
 
 configureSocketIO(io);
+startLocationSweep(io, Number(process.env.LOCATION_SWEEP_MS) || 60000);
 app.set('io', io); // lets HTTP controllers update socket rooms (group membership)
 
 // MongoDB connection

@@ -1,4 +1,6 @@
 // Location sharing: validation and live-share lifecycle for messages of type 'location'.
+import Message from '../models/Message.js';
+import Group from '../models/Group.js';
 
 export const LOCATION_LIMITS = {
   maxLiveMs: 8 * 60 * 60 * 1000, // longest live share
@@ -38,4 +40,86 @@ export function validateLocationMetadata(meta, now = new Date()) {
   if (until.getTime() - now.getTime() > LOCATION_LIMITS.maxLiveMs) return { ok: false, error: 'Live location is limited to 8 hours' };
 
   return { ok: true, metadata: { ...metadata, liveUntil: until, liveEnded: false } };
+}
+
+// ---- Live share lifecycle -------------------------------------------------
+// Every state change is a single conditional write, so a racing update, stop
+// and expiry sweep can never revive an ended share or emit "ended" twice.
+
+
+const ACTIVE_LIVE = { type: 'location', 'metadata.live': true, 'metadata.liveEnded': false };
+
+/** Broadcast a location message's current metadata to everyone in its chat. */
+export function emitLocationUpdated(io, message) {
+  const payload = {
+    id: String(message._id),
+    conversationId: message.conversationId ? String(message.conversationId) : undefined,
+    groupId: message.groupId ? String(message.groupId) : undefined,
+    metadata: message.metadata,
+  };
+  if (message.groupId) {
+    io.to(`group:${message.groupId}`).emit('location.updated', payload);
+  } else {
+    io.to(`user:${message.senderId}`).emit('location.updated', payload);
+    io.to(`user:${message.receiverId}`).emit('location.updated', payload);
+  }
+}
+
+/** End matching active live shares; emits once per share actually ended. Returns how many ended. */
+export async function endLiveShares(io, filter) {
+  const candidates = await Message.find({ ...filter, ...ACTIVE_LIVE }).select('_id');
+  let ended = 0;
+  for (const { _id } of candidates) {
+    const doc = await Message.findOneAndUpdate(
+      { _id, ...ACTIVE_LIVE },
+      { $set: { 'metadata.liveEnded': true } },
+      { new: true },
+    );
+    if (doc) {
+      ended++;
+      if (io) emitLocationUpdated(io, doc);
+    }
+  }
+  return ended;
+}
+
+/**
+ * Apply a sender's position update.
+ * @returns {Promise<'updated'|'ended'|'ignored'>}
+ */
+export async function applyLocationUpdate(io, messageId, userId, position, now = new Date()) {
+  const pos = normalizePosition(position);
+  if (!pos) return 'ignored';
+
+  const current = await Message.findOne({ _id: messageId, senderId: userId, ...ACTIVE_LIVE });
+  if (!current) return 'ignored';
+  if (current.groupId && !(await Group.exists({ _id: current.groupId, members: userId }))) return 'ignored';
+
+  if (!(new Date(current.metadata.liveUntil) > now)) {
+    return (await endLiveShares(io, { _id: current._id })) ? 'ended' : 'ignored';
+  }
+
+  const doc = await Message.findOneAndUpdate(
+    { _id: current._id, ...ACTIVE_LIVE, 'metadata.liveUntil': { $gt: now } },
+    { $set: { 'metadata.lat': pos.lat, 'metadata.lng': pos.lng, 'metadata.accuracy': pos.accuracy, 'metadata.updatedAt': now } },
+    { new: true },
+  );
+  if (!doc) return 'ignored';
+  emitLocationUpdated(io, doc);
+  return 'updated';
+}
+
+/** Sender stops their own live share. */
+export function stopLiveShare(io, messageId, userId) {
+  return endLiveShares(io, { _id: messageId, senderId: userId });
+}
+
+/** Periodically end overdue live shares, even if the sender's app is gone. Returns a stop function. */
+export function startLocationSweep(io, intervalMs = 60000) {
+  const timer = setInterval(() => {
+    endLiveShares(io, { 'metadata.liveUntil': { $lte: new Date() } })
+      .catch((err) => console.error('Error handling location sweep:', err.message));
+  }, intervalMs);
+  timer.unref?.();
+  return () => clearInterval(timer);
 }

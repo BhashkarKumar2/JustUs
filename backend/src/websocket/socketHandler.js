@@ -11,7 +11,9 @@ import groupAIService from '../services/groupAIService.js';
 import transcriptionService from '../services/transcriptionService.js';
 import rateLimiter from '../middleware/socketRateLimiter.js';
 import mongoose from 'mongoose';
-import { validateLocationMetadata, LOCATION_CONTENT } from '../services/locationService.js';
+import { validateLocationMetadata, LOCATION_CONTENT, applyLocationUpdate, stopLiveShare, endLiveShares } from '../services/locationService.js';
+
+const LOCATION_UPDATE_MIN_MS = Number(process.env.LOCATION_UPDATE_MIN_MS) || 5000;
 
 export const configureSocketIO = (io) => {
   // console.log('=== CONFIGURING SOCKET.IO AUTH MIDDLEWARE ===');
@@ -234,6 +236,11 @@ export const configureSocketIO = (io) => {
         io.to(`user:${userId}`).emit('message', messageDTO);
         io.to(`user:${incoming.receiverId}`).emit('message', messageDTO);
 
+        if (locationMeta?.live) {
+          endLiveShares(io, { senderId: userId, receiverId: incoming.receiverId, groupId: null, _id: { $ne: saved._id } })
+            .catch((err) => console.error('Error handling location (end previous):', err.message));
+        }
+
         // Async Translation
         if (textForTranslation && incoming.type === 'text') {
           (async () => {
@@ -401,6 +408,10 @@ export const configureSocketIO = (io) => {
         }
 
         message.deleted = true;
+        if (message.type === 'location' && message.metadata?.live) {
+          message.metadata = { ...message.metadata, liveEnded: true };
+          message.markModified('metadata');
+        }
         const saved = await message.save();
         const messageDTO = await messageService.convertToDTO(saved);
 
@@ -414,6 +425,31 @@ export const configureSocketIO = (io) => {
       } catch (error) {
         console.error('Error handling chat.delete:', error);
         socket.emit('error', { message: 'Failed to delete message' });
+      }
+    });
+
+    // Live location: position updates and stop (sender only; validated in locationService)
+    const lastLocationUpdate = new Map(); // messageId -> ms of last accepted update on this socket
+    socket.on('location.update', async (data) => {
+      try {
+        const messageId = String(data?.messageId || '');
+        if (!mongoose.Types.ObjectId.isValid(messageId)) return;
+        const nowMs = Date.now();
+        if (nowMs - (lastLocationUpdate.get(messageId) || 0) < LOCATION_UPDATE_MIN_MS) return;
+        lastLocationUpdate.set(messageId, nowMs);
+        await applyLocationUpdate(io, messageId, socket.userId, data, new Date(nowMs));
+      } catch (error) {
+        console.error('Error handling location.update:', error.message);
+      }
+    });
+
+    socket.on('location.stop', async (data) => {
+      try {
+        const messageId = String(data?.messageId || '');
+        if (!mongoose.Types.ObjectId.isValid(messageId)) return;
+        await stopLiveShare(io, messageId, socket.userId);
+      } catch (error) {
+        console.error('Error handling location.stop:', error.message);
       }
     });
 
@@ -822,6 +858,11 @@ export const configureSocketIO = (io) => {
         // Broadcast to all group members
         io.to(`group:${groupId}`).emit('group.message', messageDTO);
 
+        if (type === 'location' && metadata?.live) {
+          endLiveShares(io, { senderId: userId, groupId, _id: { $ne: saved._id } })
+            .catch((err) => console.error('Error handling location (end previous):', err.message));
+        }
+
         // Handle @AI mentions
         const hasAIMention = mentions.some(m => m.type === 'ai');
         if (hasAIMention && group.settings?.aiEnabled !== false) {
@@ -878,6 +919,10 @@ export const configureSocketIO = (io) => {
         }
 
         message.deleted = true;
+        if (message.type === 'location' && message.metadata?.live) {
+          message.metadata = { ...message.metadata, liveEnded: true };
+          message.markModified('metadata');
+        }
         await message.save();
 
         // Broadcast deletion to group

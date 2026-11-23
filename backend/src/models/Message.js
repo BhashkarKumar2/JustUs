@@ -37,7 +37,7 @@ const messageSchema = new mongoose.Schema({
   }],
   type: {
     type: String,
-    enum: ['text', 'image', 'audio', 'video', 'document', 'call', 'file'],
+    enum: ['text', 'image', 'audio', 'video', 'document', 'call', 'file', 'location'],
     default: 'text'
   },
   content: {
